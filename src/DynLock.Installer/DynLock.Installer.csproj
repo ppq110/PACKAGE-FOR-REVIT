@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>DynLock.Installer</RootNamespace>
+    <AssemblyName>BIMLab Player</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\BimDynamo.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <Target Name="BuildAddinPayloads" BeforeTargets="PrepareForBuild">
+    <MSBuild Projects="..\DynLock.Addin\DynLock.Addin.csproj"
+             Targets="Build"
+             Properties="Configuration=$(Configuration);TargetFramework=net48;DefineConstants=$(DefineConstants)" />
+    <MSBuild Projects="..\DynLock.Addin\DynLock.Addin.csproj"
+             Targets="Build"
+             Properties="Configuration=$(Configuration);TargetFramework=net8.0-windows;DefineConstants=$(DefineConstants)" />
+  </Target>
+
+  <!-- Nhung CA HAI bo payload vao exe: net48 cho Revit 2024, net8 cho 2025+ -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\DynLock.Addin\bin\$(Configuration)\net48\DynLock.Addin.dll">
+      <LogicalName>net48.DynLock.Addin.dll</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\DynLock.Addin\bin\$(Configuration)\net48\DynLock.Core.dll">
+      <LogicalName>net48.DynLock.Core.dll</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\DynLock.Addin\bin\$(Configuration)\net48\Newtonsoft.Json.dll">
+      <LogicalName>net48.Newtonsoft.Json.dll</LogicalName>
+    </EmbeddedResource>
+
+    <EmbeddedResource Include="..\DynLock.Addin\bin\$(Configuration)\net8.0-windows\DynLock.Addin.dll">
+      <LogicalName>net8.DynLock.Addin.dll</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\DynLock.Addin\bin\$(Configuration)\net8.0-windows\DynLock.Core.dll">
+      <LogicalName>net8.DynLock.Core.dll</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\DynLock.Addin\bin\$(Configuration)\net8.0-windows\Newtonsoft.Json.dll">
+      <LogicalName>net8.Newtonsoft.Json.dll</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\DynLock.Addin\bin\$(Configuration)\net8.0-windows\DynLock.Addin.deps.json">
+      <LogicalName>net8.DynLock.Addin.deps.json</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

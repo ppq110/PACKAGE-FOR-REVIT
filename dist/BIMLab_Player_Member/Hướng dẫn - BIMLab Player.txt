@@ -1,0 +1,53 @@
+﻿==================================================================
+  HƯỚNG DẪN CÀI ĐẶT & SỬ DỤNG - BIMLab Player (dành cho Member)
+==================================================================
+
+Mở `BIMLab Player.exe` để cài BIMLab Add-in vào Revit.
+
+------------------------------------------------------------------
+BƯỚC 1 - CÀI ADD-IN
+------------------------------------------------------------------
+  1) Bấm đôi vào `BIMLab Player.exe`.
+  2) Chọn phiên bản Revit cần cài: 2024, 2025, 2026.
+  3) Bấm `Cài add-in`.
+  4) Chờ đến khi hiện `CÀI ĐẶT XONG`.
+
+------------------------------------------------------------------
+BƯỚC 2 - CHUẨN BỊ FILE .DYNX TỪ LEADER
+------------------------------------------------------------------
+  1) Leader gửi file `.dynx` tương ứng với công cụ cần dùng.
+  2) Đặt file `.dynx` vào thư mục BIMLab Scripts:
+      C:\ProgramData\BIMLab\DynLock\Scripts
+
+  Tên file được BIMLab Player tự nhận:
+    - Auto Join:
+        BLB_AUTO JOIN ALL.dynx
+        Auto Join.dynx
+        JOIN ALL.dynx
+        Join All.dynx
+    - Create Pile:
+        FILE DYNAMO GUI TEAM IOT.dynx
+        Create Pile.dynx
+        Pile Modeling.dynx
+
+------------------------------------------------------------------
+BƯỚC 3 - SỬ DỤNG TRONG REVIT
+------------------------------------------------------------------
+  1) Mở Revit.
+  2) Vào tab `BIMLab`.
+  3) Bấm `Login` và đăng nhập bằng email được cấp quyền.
+  4) Bấm `Auto Join` hoặc `Create Pile` để chạy công cụ.
+  5) Nếu công cụ yêu cầu input, điền thông số rồi bấm `Chạy`.
+
+------------------------------------------------------------------
+LƯU Ý
+------------------------------------------------------------------
+  - Member không tự thêm hoặc quản lý plugin trong ribbon.
+  - Các nút công cụ được set cứng trong add-in.
+  - Mỗi nút chỉ chạy khi tìm thấy file `.dynx` tương ứng do leader gửi.
+  - BIMLab Player sẽ dùng các Dynamo package đã cài sẵn trong:
+      %AppData%\Dynamo\Dynamo Revit\<version>\packages
+  - Nếu máy chưa có thư mục Dynamo Revit, hãy mở Dynamo trong Revit một lần,
+    đóng Revit, rồi chạy lại `BIMLab Player.exe`.
+
+==================================================================

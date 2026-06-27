@@ -1,0 +1,12 @@
+**/bin/
+**/obj/
+.vs/
+*.user
+*.suo
+*.cache
+*.log
+*.pdb
+*.mdb
+*.opendb
+*.aps
+*.tmp

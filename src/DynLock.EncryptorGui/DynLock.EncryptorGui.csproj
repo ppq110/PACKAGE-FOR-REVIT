@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>DynLock.EncryptorGui</RootNamespace>
+    <AssemblyName>BIMLab Studio</AssemblyName>
+    <ApplicationIcon>..\..\BimDynamo.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <!-- Framework assemblies can thiet cho HTTP va JSON -->
+  <ItemGroup>
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Web.Extensions" />
+  </ItemGroup>
+
+  <!-- Dung Core luc bien dich, nhung KHONG chep ra canh exe (Private=false) -->
+  <ItemGroup>
+    <ProjectReference Include="..\DynLock.Core\DynLock.Core.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!-- Nhung ban net48 cua Core.dll (khong phu thuoc System.Drawing.Common) -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\DynLock.Core\bin\Release\net48\DynLock.Core.dll">
+      <LogicalName>DynLock.Core.dll</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\bimlab-logo.png">
+      <LogicalName>DynLock.EncryptorGui.Resources.bimlab-logo.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\BimDynamo.ico">
+      <LogicalName>DynLock.EncryptorGui.Resources.BimDynamo.ico</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>DynLock</Name>
+    <!-- Sửa đường dẫn nếu đặt DLL ở chỗ khác -->
+    <Assembly>C:\ProgramData\BIMLab\DynLock\DynLock.Addin.dll</Assembly>
+    <AddInId>7FBF4548-DA2C-42AD-8F99-7FCF8CF45E85</AddInId>
+    <FullClassName>DynLock.Addin.App</FullClassName>
+    <VendorId>BIMLAB</VendorId>
+    <VendorDescription>BIMLab, thegioiphanmem.com.vn</VendorDescription>
+  </AddIn>
+</RevitAddIns>

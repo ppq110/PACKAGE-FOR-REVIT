@@ -1,0 +1,27 @@
+name: Supabase Keepalive
+
+on:
+  schedule:
+    - cron: '0 1 */5 * *'   # Chạy mỗi 5 ngày lúc 1 giờ sáng UTC (8 giờ sáng VN)
+  workflow_dispatch:          # Cho phép chạy thủ công từ GitHub nếu cần
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping Supabase để giữ project không bị pause
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://uwmgpfnzvuqzobbvnovt.supabase.co/rest/v1/authorized_leaders?limit=1" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3bWdwZm56dnVxem9iYnZub3Z0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MjE3MjMsImV4cCI6MjA5NzM5NzcyM30.i6yTPemasrMK0ji4gzP8iy42lu1ztHcW4_CARhCVDNk" \
+            -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3bWdwZm56dnVxem9iYnZub3Z0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MjE3MjMsImV4cCI6MjA5NzM5NzcyM30.i6yTPemasrMK0ji4gzP8iy42lu1ztHcW4_CARhCVDNk")
+
+          echo "Supabase status: HTTP $STATUS"
+
+          if [ "$STATUS" = "200" ]; then
+            echo "OK — Supabase đang hoạt động bình thường."
+          else
+            echo "CẢNH BÁO — Supabase trả về HTTP $STATUS. Kiểm tra lại dashboard."
+            exit 1
+          fi

@@ -1,0 +1,38 @@
+HUONG DAN TONG THE - BIMLab DynLock
+
+He thong co 2 app chinh:
+
+1. BIMLab Studio - Leader
+- Mo file `.dyn`
+- Dien Panel, Plugin, Icon
+- Bam `Ma hoa tat ca`
+- Tao file `.dynx`
+- File `.dynx` chua:
+  - graph da ma hoa
+  - ten panel
+  - ten plugin
+  - icon
+  - ten file goc
+
+2. BIMLab Player - Member
+- Cai add-in vao Revit
+- Dang nhap
+- Load file `.dynx`
+- Xem preview
+- Chay plugin trong ribbon
+
+Luong dung:
+- Leader tao `.dynx`
+- Member nhan `.dynx`
+- Member load `.dynx`
+- App tao nut ribbon dong trong session hien tai
+- Member chon input va chay script
+
+Thu muc quan trong:
+- `C:\ProgramData\BIMLab\DynLock\Scripts\`
+- `%AppData%\Dynamo\Dynamo Revit\<version>\packages`
+
+Luu y:
+- Leader chi gui file `.dynx`, khong gui file `.dyn`
+- Member khong can quan ly ribbon bang tay
+- Neu file cu khong co metadata, app van co the load bang ten file mac dinh

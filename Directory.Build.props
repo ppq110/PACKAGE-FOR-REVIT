@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Cho phép build các target Windows (net8.0-windows / WinForms) trên macOS/Linux -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+</Project>

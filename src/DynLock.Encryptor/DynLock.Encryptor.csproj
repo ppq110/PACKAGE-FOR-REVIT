@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>DynLock.Encryptor</RootNamespace>
+    <AssemblyName>DynLockEncrypt</AssemblyName>
+    <ApplicationIcon>..\..\BimDynamo.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DynLock.Core\DynLock.Core.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,7 @@
+<Project>
+  <!-- Build net48 trên máy không cài .NET Framework (macOS/Linux/Windows tối giản):
+       lấy reference assemblies từ NuGet thay vì từ máy. -->
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="All" />
+  </ItemGroup>
+</Project>
