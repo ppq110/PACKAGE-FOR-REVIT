@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using Newtonsoft.Json.Linq;
 
 #pragma warning disable SYSLIB0014  // WebClient obsolete in net8 - don gian hon HttpClient cho sync call
@@ -15,30 +16,31 @@ namespace DynLock.Addin.Auth
             try
             {
                 string email = rawEmail.Trim().ToLowerInvariant();
-                string url   = AddinConfig.ProjectUrl + "/rest/v1/authorized_leaders"
-                             + "?email=eq."       + Uri.EscapeDataString(email)
-                             + "&is_active=eq.true"
-                             + "&select=email,full_name"
-                             + "&limit=1";
+                string url = AddinConfig.AuthServerUrl + "/api/auth/check?email="
+                           + Uri.EscapeDataString(email);
 
                 using (var wc = new System.Net.WebClient())
                 {
-                    wc.Headers.Add("apikey",        AddinConfig.AnonKey);
-                    wc.Headers.Add("Authorization", "Bearer " + AddinConfig.AnonKey);
-                    wc.Headers.Add("Accept",        "application/json");
+                    wc.Headers.Add("Accept", "application/json");
 
                     string json = wc.DownloadString(url);
-                    var arr = JArray.Parse(json);
-                    if (arr.Count == 0) return false;
+                    var row = JObject.Parse(json);
+                    if (row["isActive"]?.ToObject<bool>() != true) return false;
 
-                    var row = (JObject)arr[0];
-                    AddinSession.Email    = row["email"]?.ToString()     ?? email;
-                    AddinSession.FullName = row["full_name"]?.ToString() ?? "";
+                    AddinSession.Email    = row["email"]?.ToString()    ?? email;
+                    AddinSession.FullName = row["fullName"]?.ToString() ?? "";
                     return true;
                 }
             }
             catch (Exception ex)
             {
+                if (ex is WebException webEx &&
+                    webEx.Response is HttpWebResponse resp &&
+                    resp.StatusCode == HttpStatusCode.NotFound)
+                {
+                    return false;
+                }
+
                 LastError = ex.Message;
                 return false;
             }

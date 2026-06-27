@@ -121,7 +121,7 @@ namespace DynLock.EncryptorGui.Forms
             SetLoading(true);
             try
             {
-                bool ok = await Auth.SupabaseService.LoginAsync(email);
+                bool ok = await Auth.AuthServerService.LoginAsync(email);
                 if (ok)
                 {
                     DialogResult = DialogResult.OK;

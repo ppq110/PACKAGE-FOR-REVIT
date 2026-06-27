@@ -523,7 +523,7 @@ namespace DynLock.Addin.UI
 
             try
             {
-                HideInputFormForSelection(keepVisibleShell: true);
+                HideInputFormForSelection();
                 ActivateRevitForSelection();
 
                 IList<Reference> references = uidoc.Selection.PickObjects(
@@ -587,58 +587,57 @@ namespace DynLock.Addin.UI
                 if (IsDisposed)
                     return;
 
-                ShowInTaskbar = oldShowInTaskbar;
-                Opacity = _selectionUsedVisibleShell ? _selectionSavedOpacity : 1;
-                Enabled = true;
-                WindowState = _selectionSavedWindowState;
-                Show();
-                ShowWindow(Handle, SW_RESTORE);
-                TopMost = oldTopMost;
-                BringToFront();
-                Focus();
-                Activate();
-                SetForegroundWindow(Handle);
+                ForceShowInputForm(oldShowInTaskbar, oldTopMost);
                 Application.DoEvents();
 
-                if (_selectionUsedVisibleShell)
+                // Revit 2024 can keep focus after PickObjects + Finish. Retry briefly so
+                // the input form reliably comes back for the remaining parameters.
+                var retryTimer = new Timer { Interval = 150 };
+                int ticks = 0;
+                retryTimer.Tick += (_, __) =>
                 {
-                    var retryTimer = new Timer { Interval = 150 };
-                    int ticks = 0;
-                    retryTimer.Tick += (_, __) =>
+                    if (IsDisposed)
                     {
-                        if (IsDisposed)
-                        {
-                            retryTimer.Stop();
-                            retryTimer.Dispose();
-                            return;
-                        }
+                        retryTimer.Stop();
+                        retryTimer.Dispose();
+                        return;
+                    }
 
-                        ticks++;
-                        Opacity = _selectionSavedOpacity;
-                        Enabled = true;
-                        ShowInTaskbar = oldShowInTaskbar;
-                        WindowState = _selectionSavedWindowState;
-                        Show();
-                        ShowWindow(Handle, SW_RESTORE);
+                    ticks++;
+                    ForceShowInputForm(oldShowInTaskbar, ticks < 4 || oldTopMost);
+
+                    if (ticks >= 6)
+                    {
                         TopMost = oldTopMost;
-                        BringToFront();
-                        Activate();
-                        SetForegroundWindow(Handle);
-
-                        if (ticks >= 3)
-                        {
-                            retryTimer.Stop();
-                            retryTimer.Dispose();
-                        }
-                    };
-                    retryTimer.Start();
-                }
+                        retryTimer.Stop();
+                        retryTimer.Dispose();
+                    }
+                };
+                retryTimer.Start();
             };
 
             if (InvokeRequired)
                 BeginInvoke(restore);
             else
                 restore();
+        }
+
+        private void ForceShowInputForm(bool showInTaskbar, bool topMost)
+        {
+            if (IsDisposed)
+                return;
+
+            ShowInTaskbar = showInTaskbar;
+            Opacity = _selectionSavedOpacity;
+            Enabled = true;
+            WindowState = _selectionSavedWindowState;
+            Show();
+            ShowWindow(Handle, SW_RESTORE);
+            TopMost = topMost;
+            BringToFront();
+            Focus();
+            Activate();
+            SetForegroundWindow(Handle);
         }
 
         private void ActivateRevitForSelection()

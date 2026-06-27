@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynLock.EncryptorGui", "src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynLock.Installer", "src\DynLock.Installer\DynLock.Installer.csproj", "{6184534D-50DD-476C-8009-3C31C628AC51}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynLock.AuthServer", "src\DynLock.AuthServer\DynLock.AuthServer.csproj", "{7E18DCB4-C53B-42D4-8D9D-6A3D6CF7DB48}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,6 +42,10 @@ Global
 		{6184534D-50DD-476C-8009-3C31C628AC51}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6184534D-50DD-476C-8009-3C31C628AC51}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6184534D-50DD-476C-8009-3C31C628AC51}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E18DCB4-C53B-42D4-8D9D-6A3D6CF7DB48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E18DCB4-C53B-42D4-8D9D-6A3D6CF7DB48}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E18DCB4-C53B-42D4-8D9D-6A3D6CF7DB48}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E18DCB4-C53B-42D4-8D9D-6A3D6CF7DB48}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -47,5 +53,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{69EC1E3C-2CA9-41A5-9CC4-B947DDEE70C0} = {9D4EAD82-FC3C-4F99-AADA-7005A50A7240}
 		{6184534D-50DD-476C-8009-3C31C628AC51} = {9D4EAD82-FC3C-4F99-AADA-7005A50A7240}
+		{7E18DCB4-C53B-42D4-8D9D-6A3D6CF7DB48} = {9D4EAD82-FC3C-4F99-AADA-7005A50A7240}
 	EndGlobalSection
 EndGlobal

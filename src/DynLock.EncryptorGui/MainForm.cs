@@ -118,7 +118,7 @@ namespace DynLock.EncryptorGui
             toolbar.Controls.AddRange(new Control[] { _add, _clear });
 
             // Nut quan ly email - chi hien khi leader co quyen can_manage
-            if (SessionContext.Email == Auth.SupabaseConfig.SuperAdminEmail)
+            if (SessionContext.CanManage)
             {
                 Btn(_manageLeaders, "  Quản lý Email", C_BtnGray, C_GrayFg, 148, 32);
                 _manageLeaders.Margin = new Padding(3, 3, 3, 3);
@@ -358,6 +358,30 @@ namespace DynLock.EncryptorGui
                 return;
             }
 
+            if (string.IsNullOrWhiteSpace(_panelName.Text))
+            {
+                MessageBox.Show(this, "Vui lòng nhập tên panel trước khi mã hóa.",
+                    "BIMLab", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                _panelName.Focus();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_pluginName.Text))
+            {
+                MessageBox.Show(this, "Vui lòng nhập tên plugin trước khi mã hóa.",
+                    "BIMLab", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                _pluginName.Focus();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_iconPath.Text) || !File.Exists(_iconPath.Text))
+            {
+                MessageBox.Show(this, "Vui lòng chọn icon plugin trước khi mã hóa.",
+                    "BIMLab", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                _browseIcon.Focus();
+                return;
+            }
+
             if (!Secrets.TryGetMasterKeyBytes(out byte[] masterKey, out string keyError))
             {
                 MessageBox.Show(this, keyError,
@@ -372,13 +396,10 @@ namespace DynLock.EncryptorGui
                 try
                 {
                     string graphJson = File.ReadAllText(dyn);
-                    string pluginName = string.IsNullOrWhiteSpace(_pluginName.Text)
-                        ? Path.GetFileNameWithoutExtension(dyn)
-                        : _pluginName.Text;
                     byte[] plain = DynxPackage.Create(
                         graphJson,
                         _panelName.Text,
-                        pluginName,
+                        _pluginName.Text,
                         _iconPath.Text,
                         Path.GetFileName(dyn));
                     byte[] blob  = DynxCrypto.Encrypt(plain, masterKey);

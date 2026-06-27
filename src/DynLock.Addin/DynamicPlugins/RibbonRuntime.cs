@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.UI;
 using DynLock.Addin.UI;
@@ -11,11 +12,14 @@ namespace DynLock.Addin.DynamicPlugins
 
         private static UIControlledApplication _application;
         private static string _assemblyPath;
+        private static readonly Dictionary<string, RibbonPanel> PanelsByName =
+            new Dictionary<string, RibbonPanel>(StringComparer.OrdinalIgnoreCase);
 
         public static void Initialize(UIControlledApplication application, string assemblyPath)
         {
             _application = application;
             _assemblyPath = assemblyPath;
+            PanelsByName.Clear();
         }
 
         public static void LoadPersistedPlugins()
@@ -67,12 +71,33 @@ namespace DynLock.Addin.DynamicPlugins
 
         private static RibbonPanel GetOrCreatePanel(string panelName)
         {
-            string normalized = string.IsNullOrWhiteSpace(panelName) ? "Utilities" : panelName.Trim();
+            string normalized = NormalizePanelName(panelName);
+            string key = PanelKey(normalized);
+
+            if (PanelsByName.TryGetValue(key, out RibbonPanel cached) && cached != null)
+                return cached;
 
             var existing = _application
                 .GetRibbonPanels(TabName)
-                .FirstOrDefault(p => string.Equals(p.Name, normalized, StringComparison.OrdinalIgnoreCase));
-            return existing ?? _application.CreateRibbonPanel(TabName, normalized);
+                .FirstOrDefault(p => string.Equals(PanelKey(p.Name), key, StringComparison.OrdinalIgnoreCase));
+
+            RibbonPanel panel = existing ?? _application.CreateRibbonPanel(TabName, normalized);
+            PanelsByName[key] = panel;
+            return panel;
+        }
+
+        private static string NormalizePanelName(string panelName)
+        {
+            string value = string.IsNullOrWhiteSpace(panelName) ? "Utilities" : panelName.Trim();
+            var parts = value
+                .Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            value = string.Join(" ", parts);
+            return string.IsNullOrWhiteSpace(value) ? "Utilities" : value;
+        }
+
+        private static string PanelKey(string panelName)
+        {
+            return NormalizePanelName(panelName).ToUpperInvariant();
         }
 
         private static PushButton TryAddItem(RibbonPanel panel, PushButtonData data)

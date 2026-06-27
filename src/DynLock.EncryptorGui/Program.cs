@@ -39,18 +39,15 @@ namespace DynLock.EncryptorGui
             {
             }
 
-            if (!Auth.SupabaseConfig.TryLoad(out _, out string configError))
+            if (!Auth.AuthServerConfig.TryLoad(out _, out string configError))
             {
                 MessageBox.Show(
-                    "Supabase is not configured.\n\n" +
+                    "BIMLab auth server is not configured.\n\n" +
                     configError + "\n\n" +
                     "Set these environment variables:\n" +
-                    DynLockRuntimeConfig.SupabaseUrlEnvVar + ", " +
-                    DynLockRuntimeConfig.SupabaseAnonKeyEnvVar + ", " +
-                    DynLockRuntimeConfig.SupabaseServiceKeyEnvVar + ", " +
-                    DynLockRuntimeConfig.SupabaseAdminEmailEnvVar + "\n" +
-                    "or create:\n" + Auth.SupabaseConfig.SupabaseConfigPath,
-                    "BIMLab Studio - Missing configuration",
+                    DynLockRuntimeConfig.AuthServerUrlEnvVar + "\n" +
+                    "or create:\n" + Auth.AuthServerConfig.AuthServerConfigPath,
+                    "BIMLab Studio - Missing auth server configuration",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
                 return;

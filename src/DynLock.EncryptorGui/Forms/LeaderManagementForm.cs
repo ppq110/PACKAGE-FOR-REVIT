@@ -177,7 +177,7 @@ namespace DynLock.EncryptorGui.Forms
 
             try
             {
-                var leaders = await SupabaseService.GetAllLeadersAsync();
+                var leaders = await AuthServerService.GetAllLeadersAsync();
                 foreach (var l in leaders)
                 {
                     int idx = _grid.Rows.Add();
@@ -250,7 +250,7 @@ namespace DynLock.EncryptorGui.Forms
 
                 try
                 {
-                    bool ok = await SupabaseService.AddLeaderAsync(dlg.LeaderEmail, dlg.LeaderName);
+                    bool ok = await AuthServerService.AddLeaderAsync(dlg.LeaderEmail, dlg.LeaderName);
                     if (ok)
                         await LoadDataAsync();
                     else
@@ -288,7 +288,7 @@ namespace DynLock.EncryptorGui.Forms
 
             try
             {
-                bool ok = await SupabaseService.SetActiveAsync(leader.Email, newState);
+                bool ok = await AuthServerService.SetActiveAsync(leader.Email, newState);
                 if (ok)
                     await LoadDataAsync();   // reload -> selection cleared -> RefreshToggleButton called
                 else
@@ -324,7 +324,7 @@ namespace DynLock.EncryptorGui.Forms
 
             try
             {
-                bool ok = await SupabaseService.DeleteLeaderAsync(leader.Email);
+                bool ok = await AuthServerService.DeleteLeaderAsync(leader.Email);
                 if (ok)
                     await LoadDataAsync();
                 else

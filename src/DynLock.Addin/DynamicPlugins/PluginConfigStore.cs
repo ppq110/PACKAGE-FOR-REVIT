@@ -211,6 +211,9 @@ namespace DynLock.Addin.DynamicPlugins
             foreach (char c in Path.GetInvalidFileNameChars())
                 value = value.Replace(c.ToString(), "");
 
+            value = string.Join(" ", value
+                .Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries));
+
             return string.IsNullOrWhiteSpace(value) ? "Plugin" : value;
         }
 

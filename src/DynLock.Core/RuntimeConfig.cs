@@ -6,11 +6,9 @@ using Newtonsoft.Json;
 
 namespace DynLock.Core
 {
-    public sealed class SupabaseSettings
+    public sealed class AuthServerSettings
     {
-        public string ProjectUrl { get; set; }
-        public string AnonKey { get; set; }
-        public string ServiceKey { get; set; }
+        public string AuthServerUrl { get; set; }
         public string SuperAdminEmail { get; set; }
     }
 
@@ -19,28 +17,25 @@ namespace DynLock.Core
         public string MasterKeyBase64 { get; set; }
     }
 
-    internal sealed class SupabaseSettingsFile
+    internal sealed class AuthServerSettingsFile
     {
-        public string ProjectUrl { get; set; }
-        public string AnonKey { get; set; }
-        public string ServiceKey { get; set; }
+        public string AuthServerUrl { get; set; }
         public string SuperAdminEmail { get; set; }
     }
 
     public static class DynLockRuntimeConfig
     {
         public const string MasterKeyEnvVar = "DYNLOCK_MASTER_KEY_BASE64";
-        public const string SupabaseUrlEnvVar = "DYNLOCK_SUPABASE_URL";
-        public const string SupabaseAnonKeyEnvVar = "DYNLOCK_SUPABASE_ANON_KEY";
-        public const string SupabaseServiceKeyEnvVar = "DYNLOCK_SUPABASE_SERVICE_KEY";
-        public const string SupabaseAdminEmailEnvVar = "DYNLOCK_SUPABASE_ADMIN_EMAIL";
+        public const string AuthServerUrlEnvVar = "DYNLOCK_AUTH_SERVER_URL";
+        public const string AuthServerAdminEmailEnvVar = "DYNLOCK_AUTH_SERVER_ADMIN_EMAIL";
 
         public static string ConfigRoot => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
             "BIMLab", "DynLock");
 
         public static string SecretsConfigPath => Path.Combine(ConfigRoot, "secrets.json");
-        public static string SupabaseConfigPath => Path.Combine(ConfigRoot, "supabase.json");
+        public static string AuthServerConfigPath => Path.Combine(ConfigRoot, "authserver.json");
+        public static string AuthDatabasePath => Path.Combine(ConfigRoot, "auth.db");
 
         public static string GetRequiredMasterKeyBase64()
         {
@@ -89,23 +84,44 @@ namespace DynLock.Core
             }
         }
 
-        public static SupabaseSettings GetRequiredSupabaseSettings()
+        public static AuthServerSettings GetRequiredAuthServerSettings()
         {
-            if (!TryLoadSupabaseSettings(out SupabaseSettings settings, out string error))
+            if (!TryLoadAuthServerSettings(out AuthServerSettings settings, out string error))
                 throw new InvalidOperationException(error);
 
             return settings;
         }
 
-        public static bool TryLoadSupabaseSettings(out SupabaseSettings settings, out string error)
+        public static AuthServerSettings GetRequiredAuthClientSettings()
         {
-            settings = LoadSupabaseSettingsCore();
-            var missing = GetMissingSupabaseFields(settings).ToList();
+            if (!TryLoadAuthServerSettings(out AuthServerSettings settings, out string error, false))
+                throw new InvalidOperationException(error);
+
+            return settings;
+        }
+
+        public static bool TryLoadAuthServerSettings(out AuthServerSettings settings, out string error)
+        {
+            return TryLoadAuthServerSettings(out settings, out error, true);
+        }
+
+        public static bool TryLoadAuthClientSettings(out AuthServerSettings settings, out string error)
+        {
+            return TryLoadAuthServerSettings(out settings, out error, false);
+        }
+
+        private static bool TryLoadAuthServerSettings(
+            out AuthServerSettings settings,
+            out string error,
+            bool requireSuperAdminEmail)
+        {
+            settings = LoadAuthServerSettingsCore();
+            var missing = GetMissingAuthServerFields(settings, requireSuperAdminEmail).ToList();
             if (missing.Count > 0)
             {
                 error =
-                    "Missing DynLock Supabase settings: " + string.Join(", ", missing) +
-                    ". Set the corresponding environment variables or create " + SupabaseConfigPath + ".";
+                    "Missing DynLock auth server settings: " + string.Join(", ", missing) +
+                    ". Set the corresponding environment variables or create " + AuthServerConfigPath + ".";
                 return false;
             }
 
@@ -113,42 +129,49 @@ namespace DynLock.Core
             return true;
         }
 
-        public static IEnumerable<string> GetMissingSupabaseFields(SupabaseSettings settings)
+        public static IEnumerable<string> GetMissingAuthServerFields(AuthServerSettings settings)
+        {
+            return GetMissingAuthServerFields(settings, true);
+        }
+
+        public static IEnumerable<string> GetMissingAuthServerFields(
+            AuthServerSettings settings,
+            bool requireSuperAdminEmail)
         {
             if (settings == null)
             {
-                yield return nameof(SupabaseSettings.ProjectUrl);
-                yield return nameof(SupabaseSettings.AnonKey);
-                yield return nameof(SupabaseSettings.ServiceKey);
-                yield return nameof(SupabaseSettings.SuperAdminEmail);
+                yield return nameof(AuthServerSettings.AuthServerUrl);
+                if (requireSuperAdminEmail)
+                    yield return nameof(AuthServerSettings.SuperAdminEmail);
                 yield break;
             }
 
-            if (!IsConfiguredValue(settings.ProjectUrl)) yield return nameof(SupabaseSettings.ProjectUrl);
-            if (!IsConfiguredValue(settings.AnonKey)) yield return nameof(SupabaseSettings.AnonKey);
-            if (!IsConfiguredValue(settings.ServiceKey)) yield return nameof(SupabaseSettings.ServiceKey);
-            if (!IsConfiguredValue(settings.SuperAdminEmail)) yield return nameof(SupabaseSettings.SuperAdminEmail);
+            if (!IsConfiguredValue(settings.AuthServerUrl)) yield return nameof(AuthServerSettings.AuthServerUrl);
+            if (requireSuperAdminEmail && !IsConfiguredValue(settings.SuperAdminEmail))
+                yield return nameof(AuthServerSettings.SuperAdminEmail);
         }
 
-        private static SupabaseSettings LoadSupabaseSettingsCore()
+        private static AuthServerSettings LoadAuthServerSettingsCore()
         {
-            var file = LoadJson<SupabaseSettingsFile>(SupabaseConfigPath) ?? new SupabaseSettingsFile();
+            var file = LoadJson<AuthServerSettingsFile>(AuthServerConfigPath) ?? new AuthServerSettingsFile();
 
-            return new SupabaseSettings
+            return new AuthServerSettings
             {
-                ProjectUrl = FirstConfigured(
-                    Environment.GetEnvironmentVariable(SupabaseUrlEnvVar),
-                    file.ProjectUrl),
-                AnonKey = FirstConfigured(
-                    Environment.GetEnvironmentVariable(SupabaseAnonKeyEnvVar),
-                    file.AnonKey),
-                ServiceKey = FirstConfigured(
-                    Environment.GetEnvironmentVariable(SupabaseServiceKeyEnvVar),
-                    file.ServiceKey),
+                AuthServerUrl = NormalizeBaseUrl(FirstConfigured(
+                    Environment.GetEnvironmentVariable(AuthServerUrlEnvVar),
+                    file.AuthServerUrl)),
                 SuperAdminEmail = FirstConfigured(
-                    Environment.GetEnvironmentVariable(SupabaseAdminEmailEnvVar),
+                    Environment.GetEnvironmentVariable(AuthServerAdminEmailEnvVar),
                     file.SuperAdminEmail),
             };
+        }
+
+        private static string NormalizeBaseUrl(string value)
+        {
+            if (!IsConfiguredValue(value))
+                return value;
+
+            return value.Trim().TrimEnd('/');
         }
 
         private static string ResolveMasterKeyBase64()

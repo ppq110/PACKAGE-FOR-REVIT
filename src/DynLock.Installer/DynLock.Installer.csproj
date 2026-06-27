@@ -22,6 +22,10 @@
 
   <!-- Nhung CA HAI bo payload vao exe: net48 cho Revit 2024, net8 cho 2025+ -->
   <ItemGroup>
+    <Reference Include="System.Web.Extensions" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="..\DynLock.Addin\bin\$(Configuration)\net48\DynLock.Addin.dll">
       <LogicalName>net48.DynLock.Addin.dll</LogicalName>
     </EmbeddedResource>

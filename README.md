@@ -13,6 +13,7 @@ thong so ben trong** (Dynamo chay ngam, khong mo cua so).
 | Project | Vai tro | Ai dung |
 |---|---|---|
 | `DynLock.Core` | Thu vien ma hoa AES-256 + HMAC dung chung | (build chung) |
+| `DynLock.AuthServer` | Server HTTP noi bo, luu database local `auth.db` | May chu/LAN |
 | `DynLock.Encryptor` | `DynLockEncrypt.exe` - chuyen `.dyn` -> `.dynx` | Team lead |
 | `DynLock.Addin` | Addin Revit: nut **BIMLab -> Run Tool**, form nhap thong so, chay ngam | Nhan vien |
 
@@ -20,6 +21,63 @@ Target hien tai: **Revit 2024 / Dynamo 2.19 / .NET Framework 4.8** (khop file
 `FILE DYNAMO GUI TEAM IOT.dyn`). Addin nap `DynamoRevitDS.dll` bang reflection
 nen thuong chay duoc tren 2021-2024 ma khong can doi code; voi Revit 2025+ can
 doi TargetFramework sang `net8.0-windows` va package API sang `2025.*`/`2026.*`.
+
+## Auth server noi bo
+
+Quyen truy cap khong con phu thuoc Supabase. Chay `DynLock.AuthServer` tren mot
+may trong LAN; server nay luu database local tai:
+
+```text
+C:\ProgramData\BIMLab\DynLock\auth.db
+```
+
+Tao file cau hinh tren may server va cac may client:
+
+```json
+{
+  "AuthServerUrl": "http://192.168.1.50:5050",
+  "SuperAdminEmail": "admin@company.com"
+}
+```
+
+Duong dan file:
+
+```text
+C:\ProgramData\BIMLab\DynLock\authserver.json
+```
+
+Hien tai co the de `AuthServerUrl` tro ve IP may nay. Sau nay neu dua database/API
+len server that, chi can doi `AuthServerUrl` thanh IP hoac domain moi, vi du
+`https://bimlab-auth.company.vn`.
+
+Chay server tren may host:
+
+```powershell
+.\run_auth_server.ps1
+```
+
+Neu muon doi cong:
+
+```powershell
+.\run_auth_server.ps1 -BindUrl "http://0.0.0.0:6060"
+```
+
+Import du lieu leader tu Supabase cu sang database local mot lan:
+
+```powershell
+.\import_supabase_to_local.ps1 `
+  -SuperAdminEmail "admin@company.com" `
+  -LegacySupabaseUrl "https://your-project.supabase.co" `
+  -LegacySupabaseAnonKey "<old-supabase-anon-key>" `
+  -AuthServerUrl "http://192.168.1.50:5050"
+```
+
+Sau khi import, chay server va kiem tra:
+
+```powershell
+Invoke-RestMethod "http://192.168.1.50:5050/api/health"
+Invoke-RestMethod "http://192.168.1.50:5050/api/auth/check?email=leader@gmail.com"
+```
 
 ## Team lead can lam gi (checklist)
 
@@ -59,8 +117,12 @@ doi TargetFramework sang `net8.0-windows` va package API sang `2025.*`/`2026.*`.
 
 ## Nhan vien thay gi
 
-Nut **Run Tool** -> danh sach cong cu -> form nhap thong so -> bam **Chạy** -> ket
-qua xuat hien trong model. Khong co cua so Dynamo, khong co file JSON doc duoc.
+Chay **BIMLab Player.exe** -> nhap Auth server URL va Gmail da duoc cap quyen ->
+cai add-in cho Revit 2024/2025/2026. Mo Revit -> tab **BIMLab** ban dau co panel
+**Manager** voi nut **Login** va **Load**. Dang nhap Gmail trong Revit, bam
+**Load** de chon file `.dynx` leader gui, add-in se tao nut plugin tu metadata
+trong file `.dynx`. Khi bam plugin, member chi thay form nhap thong so/chon CAD,
+khong thay Dynamo graph hay file JSON doc duoc.
 
 ## Gioi han can biet
 
