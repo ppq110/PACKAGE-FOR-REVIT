@@ -1,54 +1,43 @@
-==================================================================
-  HUONG DAN SU DUNG - BIMLab Studio (Leader) - 27-06-2026
-==================================================================
+HUONG DAN TEAM LEAD - BIMLab Studio
 
-BIMLab Studio dung cho Leader de ma hoa file Dynamo .dyn thanh file .dynx.
-File .dynx se chua graph da ma hoa va thong tin plugin: ten panel, ten plugin,
-icon plugin.
+Muc tieu:
+- Ma hoa file Dynamo `.dyn` thanh `.dynx`
+- Them metadata plugin vao file `.dynx`
+- Phat file `.dynx` cho member
 
-------------------------------------------------------------------
-CHUAN BI
-------------------------------------------------------------------
-  1) May dang chay Auth Server noi bo.
-  2) May Leader co file:
-       C:\ProgramData\BIMLab\DynLock\authserver.json
+Luong lam viec:
+1. Mo `BIMLab Studio.exe`
+2. Dang nhap tai khoan leader
+3. Add file `.dyn`
+4. Dien:
+   - Panel
+   - Plugin
+   - Icon
+5. Bam `Ma hoa tat ca`
+6. File `.dynx` duoc tao ra cung thu muc voi file `.dyn`
 
-     Noi dung vi du:
-       {
-         "AuthServerUrl": "http://192.168.1.50:5050"
-       }
+Noi dung ben trong `.dynx`:
+- Graph Dynamo da ma hoa
+- Panel name
+- Plugin name
+- Icon
+- Ten file goc
 
-  3) Gmail Leader da co trong database local cua Auth Server va dang active.
-------------------------------------------------------------------
-CACH DUNG
-------------------------------------------------------------------
-  1) Mo file:
-       BIMLab Studio - 27-06-2026.exe
+Khi can test:
+- Gui `.dynx` cho member
+- Member bam `Load`
+- Neu preview hien Panel/Plugin/Icon va nut ribbon duoc tao, luong da dung
 
-  2) Nhap Gmail Leader.
-     Neu Gmail khong co trong database local hoac da bi tat quyen, app se yeu cau
-     nhap lai.
+Quan trong:
+- Giu kin key trong `Secrets.cs`
+- Neu doi key, phai ma hoa lai tat ca file cu
+- Chi phat `.dynx`, khong phat `.dyn`
 
-  3) Sau khi dang nhap thanh cong, them file .dyn bang nut "Them file .dyn"
-     hoac keo-tha file .dyn vao app.
+Noi lay package:
+- Team lead co the cai package hoac chuan bi san
+- Member se lay package tu `C:\ProgramData\BIMLab\DynLock\Scripts\`
 
-  4) Nhap du thong tin plugin:
-       - Ten panel
-       - Ten plugin
-       - Icon plugin
-
-  5) Bam "Ma hoa tat ca".
-
-  6) File .dynx se duoc tao ngay canh file .dyn goc.
-
-  7) Gui file .dynx cho member.
-
-------------------------------------------------------------------
-LUU Y
-------------------------------------------------------------------
-  - Chi gui file .dynx cho member, khong gui file .dyn goc.
-  - Neu 2 plugin dung chung ten panel, ben member se duoc gom vao cung 1 panel.
-  - Neu doi dia chi server, chi can sua AuthServerUrl trong authserver.json.
-  - Key ma hoa da nam san trong app. Leader khong can cau hinh key.
-
-==================================================================
+Neu can sua:
+- Mo lai file `.dyn`
+- Sua graph
+- Ma hoa lai
