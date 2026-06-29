@@ -51,8 +51,29 @@ Neu dung SQLite, file DB nam tren may server:
 C:\ProgramData\BIMLab\DynLock\auth.db
 ```
 
-Tren may server `192.168.110.213`, tao config va import/upsert du lieu Gmail tu
-Supabase cu:
+Tren may Fedora server `192.168.110.213`, tao config Auth Server:
+
+```bash
+chmod +x setup_fedora_auth_server.sh run_auth_server_fedora.sh install_fedora_auth_service.sh
+
+POSTGRES_CONNECTION_STRING='Host=127.0.0.1;Port=5432;Database=bimlab_auth;Username=bimlab;Password=your_password' \
+./setup_fedora_auth_server.sh
+```
+
+Chay Auth Server truc tiep tren Fedora:
+
+```bash
+./run_auth_server_fedora.sh
+```
+
+Hoac cai thanh user service:
+
+```bash
+./install_fedora_auth_service.sh
+```
+
+Neu dung Windows server thay vi Fedora, tao config va import/upsert du lieu Gmail tu
+Supabase cu bang PowerShell:
 
 ```powershell
 .\setup_local_auth_server.ps1 `
@@ -72,7 +93,7 @@ Neu dung Postgres, tao database/user truoc, roi setup nhu sau:
   -LegacySupabaseAnonKey "<old-supabase-anon-key>"
 ```
 
-Chay Auth Server tren may `192.168.110.213`:
+Chay Auth Server tren Windows server:
 
 ```powershell
 .\run_auth_server.ps1 -BindUrl "http://0.0.0.0:5050"
