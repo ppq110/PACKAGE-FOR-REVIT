@@ -20,7 +20,7 @@ if (!DynLockRuntimeConfig.TryLoadAuthServerSettings(out var settings, out var co
     Console.Error.WriteLine("Example " + DynLockRuntimeConfig.AuthServerConfigPath + ":");
     Console.Error.WriteLine("{");
     Console.Error.WriteLine("  \"AuthServerUrl\": \"http://192.168.1.50:5050\",");
-    Console.Error.WriteLine("  \"SuperAdminEmail\": \"admin@company.com\"");
+    Console.Error.WriteLine("  \"SuperAdminEmail\": \"projectbim.bimlab@gmail.com\"");
     Console.Error.WriteLine("}");
     return;
 }
@@ -43,6 +43,7 @@ if (args.Contains("--import-supabase", StringComparer.OrdinalIgnoreCase))
     }
 
     int imported = await ImportLegacySupabaseAsync(db, importSettings);
+    db.Initialize(settings.SuperAdminEmail);
     Console.WriteLine("Imported leaders from Supabase: " + imported);
     Console.WriteLine("Database: " + db.DatabaseLabel);
     return;
@@ -67,32 +68,53 @@ app.MapGet("/api/auth/check", Results<Ok<LeaderDto>, NotFound> (string email) =>
     return TypedResults.Ok(leader);
 });
 
-app.MapGet("/api/leaders", () => Results.Ok(db.GetAll()));
+app.MapGet("/api/leaders", (string managerEmail) =>
+{
+    if (!db.CanManage(managerEmail))
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
 
-app.MapPost("/api/leaders", Results<Created<LeaderDto>, Conflict, BadRequest<string>> (CreateLeaderRequest request) =>
+    return Results.Ok(db.GetAll());
+});
+
+app.MapPost("/api/leaders", (CreateLeaderRequest request) =>
 {
     if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains("@"))
-        return TypedResults.BadRequest("Email is required.");
+        return Results.BadRequest("Email is required.");
+
+    if (!db.CanManage(request.AddedBy))
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
 
     var created = db.Add(request.Email, request.FullName, request.AddedBy);
     if (created == null)
-        return TypedResults.Conflict();
+        return Results.Conflict();
 
-    return TypedResults.Created("/api/leaders/" + Uri.EscapeDataString(created.Email), created);
+    return Results.Created("/api/leaders/" + Uri.EscapeDataString(created.Email), created);
 });
 
-app.MapPatch("/api/leaders/{email}/active", Results<Ok, NotFound> (string email, SetActiveRequest request) =>
+app.MapPatch("/api/leaders/{email}/active", (string email, SetActiveRequest request) =>
 {
+    if (!db.CanManage(request.ManagerEmail))
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+
+    if (string.Equals(NormalizeEmail(email), NormalizeEmail(request.ManagerEmail), StringComparison.OrdinalIgnoreCase))
+        return Results.BadRequest("Managers cannot change their own active status.");
+
     return db.SetActive(email, request.IsActive)
-        ? TypedResults.Ok()
-        : TypedResults.NotFound();
+        ? Results.Ok()
+        : Results.NotFound();
 });
 
-app.MapDelete("/api/leaders/{email}", Results<Ok, NotFound> (string email) =>
+app.MapDelete("/api/leaders/{email}", (string email, string managerEmail) =>
 {
+    if (!db.CanManage(managerEmail))
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+
+    if (string.Equals(NormalizeEmail(email), NormalizeEmail(managerEmail), StringComparison.OrdinalIgnoreCase))
+        return Results.BadRequest("Managers cannot delete themselves.");
+
     return db.Delete(Uri.UnescapeDataString(email))
-        ? TypedResults.Ok()
-        : TypedResults.NotFound();
+        ? Results.Ok()
+        : Results.NotFound();
 });
 
 Console.WriteLine("BIMLab Auth Server");
@@ -103,6 +125,11 @@ Console.WriteLine("DB provider   : " + db.Provider);
 Console.WriteLine("Super admin   : " + settings.SuperAdminEmail);
 
 app.Run();
+
+static string NormalizeEmail(string email)
+{
+    return Uri.UnescapeDataString(email ?? "").Trim().ToLowerInvariant();
+}
 
 static async Task<int> ImportLegacySupabaseAsync(LeaderDatabase db, LegacySupabaseImportSettings settings)
 {
@@ -127,7 +154,7 @@ static async Task<int> ImportLegacySupabaseAsync(LeaderDatabase db, LegacySupaba
 }
 
 internal sealed record CreateLeaderRequest(string Email, string? FullName, string? AddedBy);
-internal sealed record SetActiveRequest(bool IsActive);
+internal sealed record SetActiveRequest(bool IsActive, string? ManagerEmail);
 
 internal sealed class LegacySupabaseImportSettings
 {
@@ -268,6 +295,14 @@ internal sealed class LeaderDatabase
             Add(cmd, "@now", DateTime.UtcNow.ToString("o"));
             cmd.ExecuteNonQuery();
         }
+
+        using (var cmd = cn.CreateCommand())
+        {
+            cmd.CommandText = "UPDATE authorized_leaders SET can_manage = @manage WHERE email <> @email;";
+            Add(cmd, "@manage", false);
+            Add(cmd, "@email", email);
+            cmd.ExecuteNonQuery();
+        }
     }
 
     public LeaderDto? FindActive(string email)
@@ -299,6 +334,30 @@ internal sealed class LeaderDatabase
         while (rd.Read())
             result.Add(ReadLeader(rd));
         return result;
+    }
+
+    public bool CanManage(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
+
+        using var cn = Open();
+        using var cmd = cn.CreateCommand();
+        cmd.CommandText =
+            @"SELECT can_manage
+              FROM authorized_leaders
+              WHERE email = @email AND is_active = @active
+              LIMIT 1;";
+        Add(cmd, "@email", NormalizeEmail(email));
+        Add(cmd, "@active", true);
+        object? value = cmd.ExecuteScalar();
+        if (value == null || value == DBNull.Value)
+            return false;
+
+        if (value is bool b) return b;
+        if (value is int i) return i != 0;
+        if (value is long l) return l != 0;
+        return Convert.ToBoolean(value);
     }
 
     public LeaderDto? Add(string email, string? fullName, string? addedBy)
@@ -428,7 +487,7 @@ internal sealed class LeaderDatabase
             Add(cmd, "@email", NormalizeEmail(leader.Email));
             Add(cmd, "@name", leader.FullName ?? "");
             Add(cmd, "@active", leader.IsActive);
-            Add(cmd, "@manage", leader.CanManage);
+            Add(cmd, "@manage", string.Equals(NormalizeEmail(leader.Email), NormalizeEmail(_settings.SuperAdminEmail), StringComparison.OrdinalIgnoreCase));
             Add(cmd, "@addedBy", string.IsNullOrWhiteSpace(leader.AddedBy) ? DBNull.Value : NormalizeEmail(leader.AddedBy));
             Add(cmd, "@createdAt", string.IsNullOrWhiteSpace(leader.CreatedAt) ? DateTime.UtcNow.ToString("o") : leader.CreatedAt);
             Add(cmd, "@lastLogin", string.IsNullOrWhiteSpace(leader.LastLogin) ? DBNull.Value : leader.LastLogin);

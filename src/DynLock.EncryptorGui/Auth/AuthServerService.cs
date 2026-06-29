@@ -68,7 +68,8 @@ namespace DynLock.EncryptorGui.Auth
 
         public static async Task<List<LeaderInfo>> GetAllLeadersAsync()
         {
-            var resp = await _http.SendAsync(Req(HttpMethod.Get, ApiBase + "leaders"));
+            var url = ApiBase + "leaders?managerEmail=" + Uri.EscapeDataString(SessionContext.Email ?? "");
+            var resp = await _http.SendAsync(Req(HttpMethod.Get, url));
             resp.EnsureSuccessStatusCode();
 
             var raw = _json.Deserialize<List<Dictionary<string, object>>>(
@@ -105,7 +106,11 @@ namespace DynLock.EncryptorGui.Auth
 
         public static async Task<bool> SetActiveAsync(string email, bool isActive)
         {
-            var body = _json.Serialize(new Dictionary<string, object> { ["isActive"] = isActive });
+            var body = _json.Serialize(new Dictionary<string, object>
+            {
+                ["isActive"] = isActive,
+                ["managerEmail"] = SessionContext.Email,
+            });
             var url = ApiBase + "leaders/" + Uri.EscapeDataString(email) + "/active";
             var resp = await _http.SendAsync(Req(new HttpMethod("PATCH"), url, body));
             return resp.IsSuccessStatusCode;
@@ -113,7 +118,9 @@ namespace DynLock.EncryptorGui.Auth
 
         public static async Task<bool> DeleteLeaderAsync(string email)
         {
-            var url = ApiBase + "leaders/" + Uri.EscapeDataString(email);
+            var url = ApiBase + "leaders/"
+                + Uri.EscapeDataString(email)
+                + "?managerEmail=" + Uri.EscapeDataString(SessionContext.Email ?? "");
             var resp = await _http.SendAsync(Req(HttpMethod.Delete, url));
             return resp.IsSuccessStatusCode;
         }

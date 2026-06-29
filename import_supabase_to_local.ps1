@@ -1,6 +1,5 @@
 param(
-    [Parameter(Mandatory = $true)]
-    [string]$SuperAdminEmail,
+    [string]$SuperAdminEmail = "projectbim.bimlab@gmail.com",
 
     [Parameter(Mandatory = $true)]
     [string]$LegacySupabaseUrl,

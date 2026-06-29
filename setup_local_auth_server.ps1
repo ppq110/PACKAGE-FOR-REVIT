@@ -1,6 +1,5 @@
 param(
-    [Parameter(Mandatory = $true)]
-    [string]$SuperAdminEmail,
+    [string]$SuperAdminEmail = "projectbim.bimlab@gmail.com",
 
     [string]$AuthServerUrl = "http://192.168.110.213:5050",
 

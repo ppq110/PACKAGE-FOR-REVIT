@@ -56,7 +56,7 @@ Supabase cu:
 
 ```powershell
 .\setup_local_auth_server.ps1 `
-  -SuperAdminEmail "admin@gmail.com" `
+  -SuperAdminEmail "projectbim.bimlab@gmail.com" `
   -LegacySupabaseUrl "https://your-project.supabase.co" `
   -LegacySupabaseAnonKey "<old-supabase-anon-key>"
 ```
@@ -65,7 +65,7 @@ Neu dung Postgres, tao database/user truoc, roi setup nhu sau:
 
 ```powershell
 .\setup_local_auth_server.ps1 `
-  -SuperAdminEmail "admin@gmail.com" `
+  -SuperAdminEmail "projectbim.bimlab@gmail.com" `
   -DatabaseProvider postgres `
   -PostgresConnectionString "Host=192.168.110.213;Port=5432;Database=bimlab_auth;Username=bimlab;Password=your_password" `
   -LegacySupabaseUrl "https://your-project.supabase.co" `
