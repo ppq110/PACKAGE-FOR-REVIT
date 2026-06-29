@@ -1,5 +1,5 @@
 param(
-    [string]$BindUrl = "http://0.0.0.0:5050"
+    [string]$BindUrl = "http://0.0.0.0:5051"
 )
 
 $ErrorActionPreference = "Stop"

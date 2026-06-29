@@ -200,7 +200,7 @@ namespace DynLock.Installer
                 }
 
                 InstallDynamoPackages();
-                Log("[OK] BIMLab Add-in sẽ dùng Auth Server mặc định 192.168.110.213:5050.");
+                Log("[OK] BIMLab Add-in sẽ dùng Auth Server mặc định 192.168.110.213:5051.");
                 TryCreateShortcut();
 
                 Log(">>> CÀI ĐẶT XONG <<<");

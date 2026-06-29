@@ -9,7 +9,7 @@ icon plugin.
 ------------------------------------------------------------------
 CHUAN BI
 ------------------------------------------------------------------
-  1) May server LAN http://192.168.110.213:5050 dang chay BIMLab Auth Server.
+  1) May server LAN http://192.168.110.213:5051 dang chay BIMLab Auth Server.
   2) App da nhung san dia chi Auth Server noi bo.
   3) Gmail Leader da co trong database tren may server va dang active.
 ------------------------------------------------------------------
@@ -19,7 +19,7 @@ CACH DUNG
        BIMLab Studio - 27-06-2026.exe
 
   2) Nhap Gmail Leader, vi du ten@gmail.com.
-     App se tu ket noi http://192.168.110.213:5050 de kiem tra Gmail.
+     App se tu ket noi http://192.168.110.213:5051 de kiem tra Gmail.
 
   3) Sau khi dang nhap thanh cong, them file .dyn bang nut "Them file .dyn"
      hoac keo-tha file .dyn vao app.

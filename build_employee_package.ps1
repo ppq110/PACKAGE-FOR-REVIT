@@ -1,6 +1,6 @@
 param(
     [string]$DateStamp = (Get-Date -Format "dd-MM-yyyy"),
-    [string]$AuthServerUrl = "http://192.168.110.213:5050",
+    [string]$AuthServerUrl = "http://192.168.110.213:5051",
     [switch]$SkipBuild
 )
 

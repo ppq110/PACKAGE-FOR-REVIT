@@ -1,9 +1,9 @@
 param(
     [string]$SuperAdminEmail = "projectbim.bimlab@gmail.com",
 
-    [string]$AuthServerUrl = "http://192.168.110.213:5050",
+    [string]$AuthServerUrl = "http://192.168.110.213:5051",
 
-    [string]$BindUrl = "http://0.0.0.0:5050",
+    [string]$BindUrl = "http://0.0.0.0:5051",
 
     [ValidateSet("sqlite", "postgres")]
     [string]$DatabaseProvider = "sqlite",
@@ -61,7 +61,7 @@ else {
 
 Write-Host ""
 Write-Host "Open firewall once on server machine if needed:" -ForegroundColor Cyan
-Write-Host '  netsh advfirewall firewall add rule name="BIMLab Auth Server 5050" dir=in action=allow protocol=TCP localport=5050'
+Write-Host '  netsh advfirewall firewall add rule name="BIMLab Auth Server 5051" dir=in action=allow protocol=TCP localport=5051'
 
 if ($StartServer) {
     Write-Host ""

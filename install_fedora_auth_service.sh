@@ -22,7 +22,7 @@ After=network.target
 Type=simple
 WorkingDirectory=$REPO_DIR
 EnvironmentFile=$ENV_FILE
-ExecStart=/usr/bin/dotnet run --project $REPO_DIR/src/DynLock.AuthServer/DynLock.AuthServer.csproj -c Release
+ExecStart=$REPO_DIR/run_auth_server_fedora.sh
 Restart=always
 RestartSec=5
 

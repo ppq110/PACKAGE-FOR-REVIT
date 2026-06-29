@@ -34,7 +34,7 @@ namespace DynLock.Core
         public const string AuthServerAdminEmailEnvVar = "DYNLOCK_AUTH_SERVER_ADMIN_EMAIL";
         public const string AuthDatabaseProviderEnvVar = "DYNLOCK_AUTH_DATABASE_PROVIDER";
         public const string AuthDatabaseConnectionStringEnvVar = "DYNLOCK_AUTH_DATABASE_CONNECTION_STRING";
-        public const string BuiltInAuthServerUrl = "http://192.168.110.213:5050";
+        public const string BuiltInAuthServerUrl = "http://192.168.110.213:5051";
 
         public static string ConfigRoot => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),

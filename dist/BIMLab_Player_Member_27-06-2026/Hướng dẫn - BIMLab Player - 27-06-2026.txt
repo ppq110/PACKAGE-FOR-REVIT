@@ -8,7 +8,7 @@ va load cac plugin .dynx do Leader gui.
 ------------------------------------------------------------------
 CHUAN BI
 ------------------------------------------------------------------
-  1) May server LAN http://192.168.110.213:5050 dang chay BIMLab Auth Server.
+  1) May server LAN http://192.168.110.213:5051 dang chay BIMLab Auth Server.
   2) App da nhung san dia chi Auth Server noi bo.
   3) Gmail Member da co trong database tren may server va dang active.
   4) Member can co file .dynx do Leader gui.
@@ -20,7 +20,7 @@ BUOC 1 - DANG NHAP VA CAI ADD-IN
        BIMLab Player - 27-06-2026.exe
 
   2) Nhap Gmail Member, vi du ten@gmail.com.
-     App se tu ket noi http://192.168.110.213:5050 de kiem tra Gmail.
+     App se tu ket noi http://192.168.110.213:5051 de kiem tra Gmail.
 
   3) Sau khi dang nhap thanh cong, launcher cai dat se mo ra.
 

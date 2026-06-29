@@ -8,7 +8,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls(Environment.GetEnvironmentVariable("DYNLOCK_AUTH_SERVER_BIND_URL") ?? "http://0.0.0.0:5050");
+builder.WebHost.UseUrls(Environment.GetEnvironmentVariable("DYNLOCK_AUTH_SERVER_BIND_URL") ?? "http://0.0.0.0:5051");
 
 var app = builder.Build();
 
@@ -119,7 +119,7 @@ app.MapDelete("/api/leaders/{email}", (string email, string managerEmail) =>
 
 Console.WriteLine("BIMLab Auth Server");
 Console.WriteLine("Listening URL : " + settings.AuthServerUrl);
-Console.WriteLine("Bind URL      : " + (Environment.GetEnvironmentVariable("DYNLOCK_AUTH_SERVER_BIND_URL") ?? "http://0.0.0.0:5050"));
+Console.WriteLine("Bind URL      : " + (Environment.GetEnvironmentVariable("DYNLOCK_AUTH_SERVER_BIND_URL") ?? "http://0.0.0.0:5051"));
 Console.WriteLine("Database      : " + db.DatabaseLabel);
 Console.WriteLine("DB provider   : " + db.Provider);
 Console.WriteLine("Super admin   : " + settings.SuperAdminEmail);

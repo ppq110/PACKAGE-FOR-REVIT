@@ -13,7 +13,7 @@ namespace DynLock.Installer
     internal class LoginForm : Form
     {
         private const string Base = @"C:\ProgramData\BIMLab\DynLock";
-        private const string BuiltInAuthServerUrl = "http://192.168.110.213:5050";
+        private const string BuiltInAuthServerUrl = "http://192.168.110.213:5051";
 
         private static readonly Color HeaderColor = Color.FromArgb(18, 90, 175);
         private static readonly Color BorderColor = Color.FromArgb(210, 218, 236);

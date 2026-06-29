@@ -28,7 +28,7 @@ Leader va Member khong can nhap server URL. App da nhung san dia chi Auth Server
 noi bo, mac dinh:
 
 ```text
-http://192.168.110.213:5050
+http://192.168.110.213:5051
 ```
 
 Khi app hoi dang nhap, user chi can nhap Gmail dung dang:
@@ -43,7 +43,7 @@ dang dung. Co 2 cach:
 - `sqlite`: file DB nam tren may chay Auth Server.
 - `postgres`: database Postgres trung tam, nen Leader them email tu may nao cung
   dong bo ngay cho cac may khac, mien la tat ca app cung goi ve Auth Server
-  `http://192.168.110.213:5050`.
+  `http://192.168.110.213:5051`.
 
 Neu dung SQLite, file DB nam tren may server:
 
@@ -96,13 +96,13 @@ Neu dung Postgres, tao database/user truoc, roi setup nhu sau:
 Chay Auth Server tren Windows server:
 
 ```powershell
-.\run_auth_server.ps1 -BindUrl "http://0.0.0.0:5050"
+.\run_auth_server.ps1 -BindUrl "http://0.0.0.0:5051"
 ```
 
 Tu may khac trong LAN test:
 
 ```powershell
-Invoke-RestMethod "http://192.168.110.213:5050/api/health"
+Invoke-RestMethod "http://192.168.110.213:5051/api/health"
 ```
 
 Neu can dong goi ban gui cho team, chay:
