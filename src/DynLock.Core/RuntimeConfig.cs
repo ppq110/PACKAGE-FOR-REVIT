@@ -10,6 +10,8 @@ namespace DynLock.Core
     {
         public string AuthServerUrl { get; set; }
         public string SuperAdminEmail { get; set; }
+        public string DatabaseProvider { get; set; }
+        public string DatabaseConnectionString { get; set; }
     }
 
     internal sealed class SecretsFile
@@ -21,6 +23,8 @@ namespace DynLock.Core
     {
         public string AuthServerUrl { get; set; }
         public string SuperAdminEmail { get; set; }
+        public string DatabaseProvider { get; set; }
+        public string DatabaseConnectionString { get; set; }
     }
 
     public static class DynLockRuntimeConfig
@@ -28,6 +32,9 @@ namespace DynLock.Core
         public const string MasterKeyEnvVar = "DYNLOCK_MASTER_KEY_BASE64";
         public const string AuthServerUrlEnvVar = "DYNLOCK_AUTH_SERVER_URL";
         public const string AuthServerAdminEmailEnvVar = "DYNLOCK_AUTH_SERVER_ADMIN_EMAIL";
+        public const string AuthDatabaseProviderEnvVar = "DYNLOCK_AUTH_DATABASE_PROVIDER";
+        public const string AuthDatabaseConnectionStringEnvVar = "DYNLOCK_AUTH_DATABASE_CONNECTION_STRING";
+        public const string BuiltInAuthServerUrl = "http://192.168.110.213:5050";
 
         public static string ConfigRoot => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
@@ -35,6 +42,9 @@ namespace DynLock.Core
 
         public static string SecretsConfigPath => Path.Combine(ConfigRoot, "secrets.json");
         public static string AuthServerConfigPath => Path.Combine(ConfigRoot, "authserver.json");
+        public static string AppAuthServerConfigPath => Path.Combine(
+            AppDomain.CurrentDomain.BaseDirectory,
+            "authserver.json");
         public static string AuthDatabasePath => Path.Combine(ConfigRoot, "auth.db");
 
         public static string GetRequiredMasterKeyBase64()
@@ -148,17 +158,32 @@ namespace DynLock.Core
 
         private static AuthServerSettings LoadAuthServerSettingsCore()
         {
-            var file = LoadJson<AuthServerSettingsFile>(AuthServerConfigPath) ?? new AuthServerSettingsFile();
+            var file = LoadJson<AuthServerSettingsFile>(AuthServerConfigPath)
+                ?? LoadJson<AuthServerSettingsFile>(AppAuthServerConfigPath)
+                ?? new AuthServerSettingsFile();
 
             return new AuthServerSettings
             {
                 AuthServerUrl = NormalizeBaseUrl(FirstConfigured(
                     Environment.GetEnvironmentVariable(AuthServerUrlEnvVar),
-                    file.AuthServerUrl)),
+                    file.AuthServerUrl,
+                    BuiltInAuthServerUrl)),
                 SuperAdminEmail = FirstConfigured(
                     Environment.GetEnvironmentVariable(AuthServerAdminEmailEnvVar),
                     file.SuperAdminEmail),
+                DatabaseProvider = NormalizeProvider(FirstConfigured(
+                    Environment.GetEnvironmentVariable(AuthDatabaseProviderEnvVar),
+                    file.DatabaseProvider)),
+                DatabaseConnectionString = FirstConfigured(
+                    Environment.GetEnvironmentVariable(AuthDatabaseConnectionStringEnvVar),
+                    file.DatabaseConnectionString),
             };
+        }
+
+        private static string NormalizeProvider(string value)
+        {
+            value = IsConfiguredValue(value) ? value.Trim().ToLowerInvariant() : "sqlite";
+            return value == "postgresql" ? "postgres" : value;
         }
 
         private static string NormalizeBaseUrl(string value)

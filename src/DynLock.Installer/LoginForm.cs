@@ -13,6 +13,7 @@ namespace DynLock.Installer
     internal class LoginForm : Form
     {
         private const string Base = @"C:\ProgramData\BIMLab\DynLock";
+        private const string BuiltInAuthServerUrl = "http://192.168.110.213:5050";
 
         private static readonly Color HeaderColor = Color.FromArgb(18, 90, 175);
         private static readonly Color BorderColor = Color.FromArgb(210, 218, 236);
@@ -20,10 +21,10 @@ namespace DynLock.Installer
         private static readonly Color GrayText = Color.FromArgb(52, 72, 108);
         private static readonly Color ErrorText = Color.FromArgb(180, 40, 40);
 
-        private readonly TextBox _authServerUrl = new TextBox();
         private readonly TextBox _email = new TextBox();
         private readonly Button _login = new Button();
         private readonly Label _error = new Label();
+        private readonly string _authServerUrl;
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, string lParam);
@@ -31,14 +32,15 @@ namespace DynLock.Installer
         public LoginForm()
         {
             Text = "BIMLab Player - Đăng nhập";
-            Size = new Size(480, 360);
-            MinimumSize = new Size(480, 360);
-            MaximumSize = new Size(480, 360);
+            Size = new Size(480, 290);
+            MinimumSize = new Size(480, 290);
+            MaximumSize = new Size(480, 290);
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             Font = new Font("Segoe UI", 9.5f);
             BackColor = Color.White;
+            _authServerUrl = LoadExistingAuthServerUrl();
 
             var header = new Panel { Dock = DockStyle.Top, Height = 74, BackColor = HeaderColor };
             header.Controls.Add(new Label
@@ -65,27 +67,13 @@ namespace DynLock.Installer
 
             body.Controls.Add(new Label
             {
-                Text = "Auth server URL",
-                Font = new Font("Segoe UI", 9f, FontStyle.Bold),
-                ForeColor = GrayText,
-                AutoSize = true,
-                Location = new Point(28, 22),
-            });
-            _authServerUrl.Text = LoadExistingAuthServerUrl();
-            _authServerUrl.Location = new Point(28, 44);
-            _authServerUrl.Width = 408;
-            _authServerUrl.Font = new Font("Segoe UI", 10f);
-            _authServerUrl.BorderStyle = BorderStyle.FixedSingle;
-
-            body.Controls.Add(new Label
-            {
                 Text = "Gmail",
                 Font = new Font("Segoe UI", 9f, FontStyle.Bold),
                 ForeColor = GrayText,
                 AutoSize = true,
-                Location = new Point(28, 88),
+                Location = new Point(28, 28),
             });
-            _email.Location = new Point(28, 110);
+            _email.Location = new Point(28, 50);
             _email.Width = 408;
             _email.Font = new Font("Segoe UI", 10f);
             _email.BorderStyle = BorderStyle.FixedSingle;
@@ -102,10 +90,10 @@ namespace DynLock.Installer
             _error.Font = new Font("Segoe UI", 8.5f);
             _error.ForeColor = ErrorText;
             _error.AutoSize = true;
-            _error.Location = new Point(28, 146);
+            _error.Location = new Point(28, 86);
 
             _login.Text = "Tiếp tục";
-            _login.Location = new Point(28, 182);
+            _login.Location = new Point(28, 122);
             _login.Size = new Size(408, 38);
             _login.BackColor = GreenButton;
             _login.ForeColor = Color.White;
@@ -115,7 +103,7 @@ namespace DynLock.Installer
             _login.Cursor = Cursors.Hand;
             _login.Click += (_, __) => TryLogin();
 
-            body.Controls.AddRange(new Control[] { _authServerUrl, _email, _error, _login });
+            body.Controls.AddRange(new Control[] { _email, _error, _login });
             Controls.Add(body);
             Controls.Add(sep);
             Controls.Add(header);
@@ -123,27 +111,24 @@ namespace DynLock.Installer
             AcceptButton = _login;
             Load += (_, __) =>
             {
-                SendMessage(_authServerUrl.Handle, 0x1501, IntPtr.Zero, "http://192.168.1.50:5050");
                 SendMessage(_email.Handle, 0x1501, IntPtr.Zero, "ten@gmail.com");
             };
         }
 
         private async void TryLogin()
         {
-            string authUrl = NormalizeUrl(_authServerUrl.Text);
+            string authUrl = NormalizeUrl(_authServerUrl);
             string email = (_email.Text ?? "").Trim().ToLowerInvariant();
 
-            if (string.IsNullOrWhiteSpace(authUrl) ||
-                !(authUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                  authUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
+            if (string.IsNullOrWhiteSpace(authUrl))
             {
-                ShowError("Auth server URL không hợp lệ.");
+                ShowError("Thiếu cấu hình máy chủ Auth Server.");
                 return;
             }
 
-            if (email.Length == 0 || !email.Contains("@") || !email.Contains("."))
+            if (!IsGmail(email))
             {
-                ShowError("Gmail không hợp lệ.");
+                ShowError("Gmail phải có dạng ten@gmail.com.");
                 return;
             }
 
@@ -157,10 +142,8 @@ namespace DynLock.Installer
                     return;
                 }
 
-                AuthSession.AuthServerUrl = authUrl;
                 AuthSession.Email = user.Email;
                 AuthSession.FullName = user.FullName;
-                SaveAuthServerUrl(authUrl);
                 DialogResult = DialogResult.OK;
                 Close();
             }
@@ -216,38 +199,43 @@ namespace DynLock.Installer
 
         private static string LoadExistingAuthServerUrl()
         {
-            try
+            foreach (string path in AuthConfigCandidates())
             {
-                string path = Path.Combine(Base, "authserver.json");
-                if (File.Exists(path))
+                try
                 {
+                    if (!File.Exists(path))
+                        continue;
+
                     string json = File.ReadAllText(path);
                     var row = new JavaScriptSerializer()
                         .Deserialize<Dictionary<string, object>>(json);
                     if (row != null && row.TryGetValue("AuthServerUrl", out object value))
                         return NormalizeUrl(value?.ToString());
                 }
-            }
-            catch
-            {
+                catch
+                {
+                }
             }
 
-            return "http://localhost:5050";
+            return BuiltInAuthServerUrl;
         }
 
-        private static void SaveAuthServerUrl(string authServerUrl)
+        private static IEnumerable<string> AuthConfigCandidates()
         {
-            Directory.CreateDirectory(Base);
-            var config = new Dictionary<string, object>();
-            config["AuthServerUrl"] = authServerUrl;
-            string json = new JavaScriptSerializer()
-                .Serialize(config);
-            File.WriteAllText(Path.Combine(Base, "authserver.json"), json);
+            yield return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "authserver.json");
+            yield return Path.Combine(Base, "authserver.json");
         }
 
         private static string NormalizeUrl(string value)
         {
             return (value ?? "").Trim().TrimEnd('/');
+        }
+
+        private static bool IsGmail(string email)
+        {
+            email = (email ?? "").Trim().ToLowerInvariant();
+            return email.EndsWith("@gmail.com", StringComparison.OrdinalIgnoreCase)
+                && email.Length > "@gmail.com".Length;
         }
 
         private void ShowError(string message)
@@ -259,7 +247,6 @@ namespace DynLock.Installer
         {
             _login.Enabled = !loading;
             _email.Enabled = !loading;
-            _authServerUrl.Enabled = !loading;
             _login.Text = loading ? "Đang kiểm tra..." : "Tiếp tục";
             if (loading)
                 _error.Text = "";

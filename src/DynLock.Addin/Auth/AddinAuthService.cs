@@ -2,7 +2,7 @@ using System;
 using System.Net;
 using Newtonsoft.Json.Linq;
 
-#pragma warning disable SYSLIB0014  // WebClient obsolete in net8 - don gian hon HttpClient cho sync call
+#pragma warning disable SYSLIB0014
 
 namespace DynLock.Addin.Auth
 {
@@ -13,13 +13,16 @@ namespace DynLock.Addin.Auth
         public static bool TryLogin(string rawEmail)
         {
             LastError = null;
+            string email = NormalizeGmail(rawEmail);
+            if (email == null)
+                return false;
+
             try
             {
-                string email = rawEmail.Trim().ToLowerInvariant();
                 string url = AddinConfig.AuthServerUrl + "/api/auth/check?email="
-                           + Uri.EscapeDataString(email);
+                    + Uri.EscapeDataString(email);
 
-                using (var wc = new System.Net.WebClient())
+                using (var wc = new WebClient())
                 {
                     wc.Headers.Add("Accept", "application/json");
 
@@ -45,6 +48,21 @@ namespace DynLock.Addin.Auth
                 return false;
             }
         }
+
+        public static bool IsGmail(string rawEmail)
+        {
+            return NormalizeGmail(rawEmail) != null;
+        }
+
+        private static string NormalizeGmail(string rawEmail)
+        {
+            string email = (rawEmail ?? "").Trim().ToLowerInvariant();
+            return email.EndsWith("@gmail.com", StringComparison.OrdinalIgnoreCase)
+                && email.Length > "@gmail.com".Length
+                ? email
+                : null;
+        }
+
     }
 }
 

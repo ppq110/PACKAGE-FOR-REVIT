@@ -47,7 +47,7 @@ namespace DynLock.EncryptorGui.Forms
             });
             header.Controls.Add(new Label
             {
-                Text      = "Nhập email được cấp quyền để tiếp tục",
+                Text      = "Nhập Gmail để tiếp tục",
                 Font      = new Font("Segoe UI", 8.5f),
                 ForeColor = C_HeaderSub,
                 BackColor = Color.Transparent,
@@ -62,7 +62,7 @@ namespace DynLock.EncryptorGui.Forms
 
             var lblEmail = new Label
             {
-                Text      = "Địa chỉ email",
+                Text      = "Gmail",
                 Font      = new Font("Segoe UI", 9f, FontStyle.Bold),
                 ForeColor = C_GrayFg,
                 AutoSize  = true,
@@ -109,14 +109,14 @@ namespace DynLock.EncryptorGui.Forms
         void OnLoad(object sender, EventArgs e)
         {
             // Placeholder text (Win32, tuong thich .NET 4.8)
-            SendMessage(_emailBox.Handle, 0x1501 /*EM_SETCUEBANNER*/, IntPtr.Zero, "leader@company.com");
+            SendMessage(_emailBox.Handle, 0x1501 /*EM_SETCUEBANNER*/, IntPtr.Zero, "ten@gmail.com");
         }
 
         async void TryLogin()
         {
             var email = _emailBox.Text.Trim().ToLowerInvariant();
-            if (string.IsNullOrEmpty(email)) { ShowError("Vui lòng nhập địa chỉ email."); return; }
-            if (!email.Contains("@"))        { ShowError("Email không hợp lệ."); return; }
+            if (string.IsNullOrEmpty(email)) { ShowError("Vui lòng nhập Gmail."); return; }
+            if (!Auth.AuthServerService.IsGmail(email)) { ShowError("Gmail phải có dạng ten@gmail.com."); return; }
 
             SetLoading(true);
             try
@@ -129,12 +129,12 @@ namespace DynLock.EncryptorGui.Forms
                 }
                 else
                 {
-                    ShowError("Email này chưa được cấp quyền truy cập.");
+                    ShowError("Gmail này chưa được cấp quyền truy cập.");
                 }
             }
             catch (Exception ex)
             {
-                ShowError("Không thể kết nối: " + ex.Message);
+                ShowError("Không kết nối được Auth Server: " + ex.Message);
             }
             finally
             {

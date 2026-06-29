@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.6" />
+    <PackageReference Include="Npgsql" Version="8.0.6" />
     <ProjectReference Include="..\DynLock.Core\DynLock.Core.csproj" />
   </ItemGroup>
 

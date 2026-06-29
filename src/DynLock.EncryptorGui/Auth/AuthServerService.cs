@@ -31,6 +31,10 @@ namespace DynLock.EncryptorGui.Auth
 
         public static async Task<bool> LoginAsync(string email)
         {
+            email = NormalizeGmail(email);
+            if (email == null)
+                return false;
+
             var url = ApiBase
                 + "auth/check?email=" + Uri.EscapeDataString(email);
 
@@ -42,10 +46,24 @@ namespace DynLock.EncryptorGui.Auth
 
             if (row == null || !Get<bool>(row, "isActive", false)) return false;
 
-            SessionContext.Email     = Get<string>(row, "email");
+            SessionContext.Email     = Get<string>(row, "email", email);
             SessionContext.FullName  = Get<string>(row, "fullName", "");
             SessionContext.CanManage = Get<bool>(row, "canManage", false);
             return true;
+        }
+
+        public static bool IsGmail(string email)
+        {
+            return NormalizeGmail(email) != null;
+        }
+
+        private static string NormalizeGmail(string email)
+        {
+            email = (email ?? "").Trim().ToLowerInvariant();
+            return email.EndsWith("@gmail.com", StringComparison.OrdinalIgnoreCase)
+                && email.Length > "@gmail.com".Length
+                ? email
+                : null;
         }
 
         public static async Task<List<LeaderInfo>> GetAllLeadersAsync()

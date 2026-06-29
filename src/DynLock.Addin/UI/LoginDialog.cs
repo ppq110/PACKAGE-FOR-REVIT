@@ -66,7 +66,7 @@ namespace DynLock.Addin.UI
             };
             var lblSub = new Label
             {
-                Text      = "Nhập email được cấp quyền để sử dụng công cụ",
+                Text      = "Nhập Gmail để sử dụng công cụ",
                 Font      = new Font("Segoe UI", 8.5f),
                 ForeColor = C_Sub,
                 BackColor = Color.Transparent,
@@ -82,7 +82,7 @@ namespace DynLock.Addin.UI
 
             var lblEmailLbl = new Label
             {
-                Text      = "Địa chỉ Email",
+                Text      = "Gmail",
                 Font      = new Font("Segoe UI", 9f, FontStyle.Bold),
                 ForeColor = C_GrayFg,
                 AutoSize  = true,
@@ -150,9 +150,9 @@ namespace DynLock.Addin.UI
         private async void TryLogin()
         {
             string email = _txtEmail.Text?.Trim().ToLowerInvariant() ?? "";
-            if (email.Length == 0 || !email.Contains("@") || !email.Contains("."))
+            if (!AddinAuthService.IsGmail(email))
             {
-                ShowError("Email không hợp lệ.");
+                ShowError("Gmail phải có dạng ten@gmail.com.");
                 return;
             }
 
@@ -167,7 +167,7 @@ namespace DynLock.Addin.UI
             }
             else
             {
-                ShowError(string.IsNullOrWhiteSpace(AddinAuthService.LastError) ? "Email này chưa được cấp quyền truy cập." : AddinAuthService.LastError);
+                ShowError(string.IsNullOrWhiteSpace(AddinAuthService.LastError) ? "Gmail này chưa được cấp quyền truy cập." : AddinAuthService.LastError);
             }
         }
 

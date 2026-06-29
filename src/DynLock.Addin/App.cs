@@ -38,7 +38,7 @@ namespace DynLock.Addin
                 "DynLock.Addin.Commands.LoginCommand")
             {
                 ToolTip = "Đăng nhập BIMLab",
-                LongDescription = "Đăng nhập bằng email được cấp quyền trước khi sử dụng công cụ BIMLab.",
+                LongDescription = "Đăng nhập bằng Gmail trước khi sử dụng công cụ BIMLab.",
             };
             login.LargeImage = BitmapToWpf(AddinIcons.LoginIcon(32));
             login.Image = BitmapToWpf(AddinIcons.LoginIcon(16));

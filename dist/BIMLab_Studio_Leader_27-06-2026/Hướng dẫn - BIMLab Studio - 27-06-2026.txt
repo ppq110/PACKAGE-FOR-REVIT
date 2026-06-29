@@ -1,43 +1,45 @@
-HUONG DAN TEAM LEAD - BIMLab Studio
+==================================================================
+  HUONG DAN SU DUNG - BIMLab Studio (Leader) - 27-06-2026
+==================================================================
 
-Muc tieu:
-- Ma hoa file Dynamo `.dyn` thanh `.dynx`
-- Them metadata plugin vao file `.dynx`
-- Phat file `.dynx` cho member
+BIMLab Studio dung cho Leader de ma hoa file Dynamo .dyn thanh file .dynx.
+File .dynx se chua graph da ma hoa va thong tin plugin: ten panel, ten plugin,
+icon plugin.
 
-Luong lam viec:
-1. Mo `BIMLab Studio.exe`
-2. Dang nhap tai khoan leader
-3. Add file `.dyn`
-4. Dien:
-   - Panel
-   - Plugin
-   - Icon
-5. Bam `Ma hoa tat ca`
-6. File `.dynx` duoc tao ra cung thu muc voi file `.dyn`
+------------------------------------------------------------------
+CHUAN BI
+------------------------------------------------------------------
+  1) May server LAN http://192.168.110.213:5050 dang chay BIMLab Auth Server.
+  2) App da nhung san dia chi Auth Server noi bo.
+  3) Gmail Leader da co trong database tren may server va dang active.
+------------------------------------------------------------------
+CACH DUNG
+------------------------------------------------------------------
+  1) Mo file:
+       BIMLab Studio - 27-06-2026.exe
 
-Noi dung ben trong `.dynx`:
-- Graph Dynamo da ma hoa
-- Panel name
-- Plugin name
-- Icon
-- Ten file goc
+  2) Nhap Gmail Leader, vi du ten@gmail.com.
+     App se tu ket noi http://192.168.110.213:5050 de kiem tra Gmail.
 
-Khi can test:
-- Gui `.dynx` cho member
-- Member bam `Load`
-- Neu preview hien Panel/Plugin/Icon va nut ribbon duoc tao, luong da dung
+  3) Sau khi dang nhap thanh cong, them file .dyn bang nut "Them file .dyn"
+     hoac keo-tha file .dyn vao app.
 
-Quan trong:
-- Giu kin key trong `Secrets.cs`
-- Neu doi key, phai ma hoa lai tat ca file cu
-- Chi phat `.dynx`, khong phat `.dyn`
+  4) Nhap du thong tin plugin:
+       - Ten panel
+       - Ten plugin
+       - Icon plugin
 
-Noi lay package:
-- Team lead co the cai package hoac chuan bi san
-- Member se lay package tu `C:\ProgramData\BIMLab\DynLock\Scripts\`
+  5) Bam "Ma hoa tat ca".
 
-Neu can sua:
-- Mo lai file `.dyn`
-- Sua graph
-- Ma hoa lai
+  6) File .dynx se duoc tao ngay canh file .dyn goc.
+
+  7) Gui file .dynx cho member.
+
+------------------------------------------------------------------
+LUU Y
+------------------------------------------------------------------
+  - Chi gui file .dynx cho member, khong gui file .dyn goc.
+  - Neu 2 plugin dung chung ten panel, ben member se duoc gom vao cung 1 panel.
+  - Key ma hoa da nam san trong app. Leader khong can cau hinh key.
+
+==================================================================

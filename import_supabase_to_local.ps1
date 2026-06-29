@@ -8,7 +8,12 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$LegacySupabaseAnonKey,
 
-    [string]$AuthServerUrl = "http://localhost:5050"
+    [string]$AuthServerUrl = "http://192.168.110.213:5050",
+
+    [ValidateSet("sqlite", "postgres")]
+    [string]$DatabaseProvider = "sqlite",
+
+    [string]$PostgresConnectionString = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -21,6 +26,15 @@ New-Item -ItemType Directory -Force -Path $configRoot | Out-Null
 $config = [ordered]@{
     AuthServerUrl = $AuthServerUrl
     SuperAdminEmail = $SuperAdminEmail
+    DatabaseProvider = $DatabaseProvider
+}
+
+if ($DatabaseProvider -eq "postgres") {
+    if (-not $PostgresConnectionString) {
+        throw "PostgresConnectionString is required when -DatabaseProvider postgres."
+    }
+
+    $config.DatabaseConnectionString = $PostgresConnectionString
 }
 
 $config | ConvertTo-Json | Set-Content -Encoding UTF8 $authConfig

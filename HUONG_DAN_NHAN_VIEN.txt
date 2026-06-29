@@ -9,7 +9,7 @@ HUONG DAN NHAN VIEN - BIMLab Player
 2. Dang nhap
 - Vao tab `BIMLab`
 - Bam `Login`
-- Nhap email duoc cap quyen
+- Nhap Gmail dang ten@gmail.com
 
 3. Load plugin
 - Bam `Load`

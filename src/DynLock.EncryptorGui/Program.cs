@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
-using DynLock.Core;
 
 namespace DynLock.EncryptorGui
 {
@@ -37,20 +36,6 @@ namespace DynLock.EncryptorGui
             }
             catch
             {
-            }
-
-            if (!Auth.AuthServerConfig.TryLoad(out _, out string configError))
-            {
-                MessageBox.Show(
-                    "BIMLab auth server is not configured.\n\n" +
-                    configError + "\n\n" +
-                    "Set these environment variables:\n" +
-                    DynLockRuntimeConfig.AuthServerUrlEnvVar + "\n" +
-                    "or create:\n" + Auth.AuthServerConfig.AuthServerConfigPath,
-                    "BIMLab Studio - Missing auth server configuration",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-                return;
             }
 
             using (var login = new Forms.LoginForm())

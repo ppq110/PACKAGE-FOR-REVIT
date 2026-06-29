@@ -1,6 +1,8 @@
 using DynLock.Core;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Data.Sqlite;
+using Npgsql;
+using System.Data.Common;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -23,7 +25,7 @@ if (!DynLockRuntimeConfig.TryLoadAuthServerSettings(out var settings, out var co
     return;
 }
 
-var db = new LeaderDatabase(DynLockRuntimeConfig.AuthDatabasePath);
+var db = new LeaderDatabase(settings);
 db.Initialize(settings.SuperAdminEmail);
 
 if (args.Contains("--import-supabase", StringComparer.OrdinalIgnoreCase))
@@ -42,14 +44,15 @@ if (args.Contains("--import-supabase", StringComparer.OrdinalIgnoreCase))
 
     int imported = await ImportLegacySupabaseAsync(db, importSettings);
     Console.WriteLine("Imported leaders from Supabase: " + imported);
-    Console.WriteLine("Database: " + DynLockRuntimeConfig.AuthDatabasePath);
+    Console.WriteLine("Database: " + db.DatabaseLabel);
     return;
 }
 
 app.MapGet("/api/health", () => Results.Ok(new
 {
     ok = true,
-    database = DynLockRuntimeConfig.AuthDatabasePath,
+    databaseProvider = db.Provider,
+    database = db.DatabaseLabel,
     serverTime = DateTime.UtcNow.ToString("o"),
 }));
 
@@ -95,7 +98,8 @@ app.MapDelete("/api/leaders/{email}", Results<Ok, NotFound> (string email) =>
 Console.WriteLine("BIMLab Auth Server");
 Console.WriteLine("Listening URL : " + settings.AuthServerUrl);
 Console.WriteLine("Bind URL      : " + (Environment.GetEnvironmentVariable("DYNLOCK_AUTH_SERVER_BIND_URL") ?? "http://0.0.0.0:5050"));
-Console.WriteLine("Database      : " + DynLockRuntimeConfig.AuthDatabasePath);
+Console.WriteLine("Database      : " + db.DatabaseLabel);
+Console.WriteLine("DB provider   : " + db.Provider);
 Console.WriteLine("Super admin   : " + settings.SuperAdminEmail);
 
 app.Run();
@@ -194,23 +198,46 @@ internal sealed class LeaderDto
 
 internal sealed class LeaderDatabase
 {
-    private readonly string _dbPath;
-    private string ConnectionString => new SqliteConnectionStringBuilder { DataSource = _dbPath }.ToString();
+    private readonly AuthServerSettings _settings;
+    private string ConnectionString => IsPostgres
+        ? _settings.DatabaseConnectionString
+        : new SqliteConnectionStringBuilder { DataSource = DynLockRuntimeConfig.AuthDatabasePath }.ToString();
 
-    public LeaderDatabase(string dbPath)
+    public string Provider => IsPostgres ? "postgres" : "sqlite";
+    public string DatabaseLabel => IsPostgres
+        ? MaskConnectionString(_settings.DatabaseConnectionString)
+        : DynLockRuntimeConfig.AuthDatabasePath;
+
+    private bool IsPostgres => string.Equals(_settings.DatabaseProvider, "postgres", StringComparison.OrdinalIgnoreCase);
+
+    public LeaderDatabase(AuthServerSettings settings)
     {
-        _dbPath = dbPath;
+        _settings = settings;
+        if (IsPostgres && string.IsNullOrWhiteSpace(_settings.DatabaseConnectionString))
+            throw new InvalidOperationException("Postgres requires DatabaseConnectionString in authserver.json or DYNLOCK_AUTH_DATABASE_CONNECTION_STRING.");
     }
 
     public void Initialize(string superAdminEmail)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(_dbPath)!);
+        if (!IsPostgres)
+            Directory.CreateDirectory(Path.GetDirectoryName(DynLockRuntimeConfig.AuthDatabasePath)!);
 
         using var cn = Open();
         using (var cmd = cn.CreateCommand())
         {
-            cmd.CommandText =
-                @"CREATE TABLE IF NOT EXISTS authorized_leaders (
+            cmd.CommandText = IsPostgres
+                ? @"CREATE TABLE IF NOT EXISTS authorized_leaders (
+                    email TEXT PRIMARY KEY,
+                    full_name TEXT NOT NULL DEFAULT '',
+                    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                    can_manage BOOLEAN NOT NULL DEFAULT FALSE,
+                    added_by TEXT NULL,
+                    created_at TEXT NOT NULL,
+                    last_login TEXT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_authorized_leaders_active
+                    ON authorized_leaders (email, is_active);"
+                : @"CREATE TABLE IF NOT EXISTS authorized_leaders (
                     email TEXT PRIMARY KEY,
                     full_name TEXT NOT NULL DEFAULT '',
                     is_active INTEGER NOT NULL DEFAULT 1,
@@ -230,13 +257,15 @@ internal sealed class LeaderDatabase
             cmd.CommandText =
                 @"INSERT INTO authorized_leaders
                     (email, full_name, is_active, can_manage, added_by, created_at, last_login)
-                  VALUES ($email, $name, 1, 1, NULL, $now, NULL)
+                  VALUES (@email, @name, @active, @manage, NULL, @now, NULL)
                   ON CONFLICT(email) DO UPDATE SET
-                    is_active = 1,
-                    can_manage = 1;";
-            cmd.Parameters.AddWithValue("$email", email);
-            cmd.Parameters.AddWithValue("$name", "Super Admin");
-            cmd.Parameters.AddWithValue("$now", DateTime.UtcNow.ToString("o"));
+                    is_active = @active,
+                    can_manage = @manage;";
+            Add(cmd, "@email", email);
+            Add(cmd, "@name", "Super Admin");
+            Add(cmd, "@active", true);
+            Add(cmd, "@manage", true);
+            Add(cmd, "@now", DateTime.UtcNow.ToString("o"));
             cmd.ExecuteNonQuery();
         }
     }
@@ -248,9 +277,10 @@ internal sealed class LeaderDatabase
         cmd.CommandText =
             @"SELECT email, full_name, is_active, can_manage, added_by, created_at, last_login
               FROM authorized_leaders
-              WHERE email = $email AND is_active = 1
+              WHERE email = @email AND is_active = @active
               LIMIT 1;";
-        cmd.Parameters.AddWithValue("$email", NormalizeEmail(email));
+        Add(cmd, "@email", NormalizeEmail(email));
+        Add(cmd, "@active", true);
         using var rd = cmd.ExecuteReader();
         return rd.Read() ? ReadLeader(rd) : null;
     }
@@ -275,21 +305,23 @@ internal sealed class LeaderDatabase
     {
         using var cn = Open();
         using var cmd = cn.CreateCommand();
-        cmd.CommandText =
-            @"INSERT INTO authorized_leaders
+            cmd.CommandText =
+                @"INSERT INTO authorized_leaders
                 (email, full_name, is_active, can_manage, added_by, created_at, last_login)
-              VALUES ($email, $name, 1, 0, $addedBy, $now, NULL);";
-        cmd.Parameters.AddWithValue("$email", NormalizeEmail(email));
-        cmd.Parameters.AddWithValue("$name", (fullName ?? "").Trim());
-        cmd.Parameters.AddWithValue("$addedBy", string.IsNullOrWhiteSpace(addedBy) ? DBNull.Value : NormalizeEmail(addedBy));
-        cmd.Parameters.AddWithValue("$now", DateTime.UtcNow.ToString("o"));
+              VALUES (@email, @name, @active, @manage, @addedBy, @now, NULL);";
+        Add(cmd, "@email", NormalizeEmail(email));
+        Add(cmd, "@name", (fullName ?? "").Trim());
+        Add(cmd, "@active", true);
+        Add(cmd, "@manage", false);
+        Add(cmd, "@addedBy", string.IsNullOrWhiteSpace(addedBy) ? DBNull.Value : NormalizeEmail(addedBy));
+        Add(cmd, "@now", DateTime.UtcNow.ToString("o"));
 
         try
         {
             cmd.ExecuteNonQuery();
             return FindActive(email);
         }
-        catch (SqliteException ex) when (ex.SqliteErrorCode == 19)
+        catch (DbException ex) when (IsUniqueViolation(ex))
         {
             return null;
         }
@@ -299,9 +331,9 @@ internal sealed class LeaderDatabase
     {
         using var cn = Open();
         using var cmd = cn.CreateCommand();
-        cmd.CommandText = "UPDATE authorized_leaders SET is_active = $active WHERE email = $email;";
-        cmd.Parameters.AddWithValue("$active", isActive ? 1 : 0);
-        cmd.Parameters.AddWithValue("$email", NormalizeEmail(email));
+        cmd.CommandText = "UPDATE authorized_leaders SET is_active = @active WHERE email = @email;";
+        Add(cmd, "@active", isActive);
+        Add(cmd, "@email", NormalizeEmail(email));
         return cmd.ExecuteNonQuery() > 0;
     }
 
@@ -309,8 +341,8 @@ internal sealed class LeaderDatabase
     {
         using var cn = Open();
         using var cmd = cn.CreateCommand();
-        cmd.CommandText = "DELETE FROM authorized_leaders WHERE email = $email;";
-        cmd.Parameters.AddWithValue("$email", NormalizeEmail(email));
+        cmd.CommandText = "DELETE FROM authorized_leaders WHERE email = @email;";
+        Add(cmd, "@email", NormalizeEmail(email));
         return cmd.ExecuteNonQuery() > 0;
     }
 
@@ -318,31 +350,50 @@ internal sealed class LeaderDatabase
     {
         using var cn = Open();
         using var cmd = cn.CreateCommand();
-        cmd.CommandText = "UPDATE authorized_leaders SET last_login = $now WHERE email = $email;";
-        cmd.Parameters.AddWithValue("$now", DateTime.UtcNow.ToString("o"));
-        cmd.Parameters.AddWithValue("$email", NormalizeEmail(email));
+        cmd.CommandText = "UPDATE authorized_leaders SET last_login = @now WHERE email = @email;";
+        Add(cmd, "@now", DateTime.UtcNow.ToString("o"));
+        Add(cmd, "@email", NormalizeEmail(email));
         cmd.ExecuteNonQuery();
     }
 
-    private SqliteConnection Open()
+    private DbConnection Open()
     {
-        var cn = new SqliteConnection(ConnectionString);
+        DbConnection cn = IsPostgres
+            ? new NpgsqlConnection(ConnectionString)
+            : new SqliteConnection(ConnectionString);
         cn.Open();
         return cn;
     }
 
-    private static LeaderDto ReadLeader(SqliteDataReader rd)
+    private static void Add(DbCommand cmd, string name, object value)
+    {
+        var p = cmd.CreateParameter();
+        p.ParameterName = name;
+        p.Value = value ?? DBNull.Value;
+        cmd.Parameters.Add(p);
+    }
+
+    private static LeaderDto ReadLeader(DbDataReader rd)
     {
         return new LeaderDto
         {
             Email = rd.GetString(0),
             FullName = rd.IsDBNull(1) ? "" : rd.GetString(1),
-            IsActive = rd.GetInt32(2) != 0,
-            CanManage = rd.GetInt32(3) != 0,
+            IsActive = GetBool(rd, 2),
+            CanManage = GetBool(rd, 3),
             AddedBy = rd.IsDBNull(4) ? "" : rd.GetString(4),
             CreatedAt = rd.IsDBNull(5) ? "" : rd.GetString(5),
             LastLogin = rd.IsDBNull(6) ? "" : rd.GetString(6),
         };
+    }
+
+    private static bool GetBool(DbDataReader rd, int index)
+    {
+        object value = rd.GetValue(index);
+        if (value is bool b) return b;
+        if (value is int i) return i != 0;
+        if (value is long l) return l != 0;
+        return Convert.ToBoolean(value);
     }
 
     private static string NormalizeEmail(string email)
@@ -366,7 +417,7 @@ internal sealed class LeaderDatabase
             cmd.CommandText =
                 @"INSERT INTO authorized_leaders
                     (email, full_name, is_active, can_manage, added_by, created_at, last_login)
-                  VALUES ($email, $name, $active, $manage, $addedBy, $createdAt, $lastLogin)
+                  VALUES (@email, @name, @active, @manage, @addedBy, @createdAt, @lastLogin)
                   ON CONFLICT(email) DO UPDATE SET
                     full_name = excluded.full_name,
                     is_active = excluded.is_active,
@@ -374,18 +425,47 @@ internal sealed class LeaderDatabase
                     added_by = excluded.added_by,
                     created_at = excluded.created_at,
                     last_login = excluded.last_login;";
-            cmd.Parameters.AddWithValue("$email", NormalizeEmail(leader.Email));
-            cmd.Parameters.AddWithValue("$name", leader.FullName ?? "");
-            cmd.Parameters.AddWithValue("$active", leader.IsActive ? 1 : 0);
-            cmd.Parameters.AddWithValue("$manage", leader.CanManage ? 1 : 0);
-            cmd.Parameters.AddWithValue("$addedBy", string.IsNullOrWhiteSpace(leader.AddedBy) ? DBNull.Value : NormalizeEmail(leader.AddedBy));
-            cmd.Parameters.AddWithValue("$createdAt", string.IsNullOrWhiteSpace(leader.CreatedAt) ? DateTime.UtcNow.ToString("o") : leader.CreatedAt);
-            cmd.Parameters.AddWithValue("$lastLogin", string.IsNullOrWhiteSpace(leader.LastLogin) ? DBNull.Value : leader.LastLogin);
+            Add(cmd, "@email", NormalizeEmail(leader.Email));
+            Add(cmd, "@name", leader.FullName ?? "");
+            Add(cmd, "@active", leader.IsActive);
+            Add(cmd, "@manage", leader.CanManage);
+            Add(cmd, "@addedBy", string.IsNullOrWhiteSpace(leader.AddedBy) ? DBNull.Value : NormalizeEmail(leader.AddedBy));
+            Add(cmd, "@createdAt", string.IsNullOrWhiteSpace(leader.CreatedAt) ? DateTime.UtcNow.ToString("o") : leader.CreatedAt);
+            Add(cmd, "@lastLogin", string.IsNullOrWhiteSpace(leader.LastLogin) ? DBNull.Value : leader.LastLogin);
             cmd.ExecuteNonQuery();
             count++;
         }
 
         tx.Commit();
         return count;
+    }
+
+    private static bool IsUniqueViolation(DbException ex)
+    {
+        if (ex is SqliteException sqlite)
+            return sqlite.SqliteErrorCode == 19;
+
+        if (ex is PostgresException postgres)
+            return postgres.SqlState == PostgresErrorCodes.UniqueViolation;
+
+        return false;
+    }
+
+    private static string MaskConnectionString(string connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+            return "";
+
+        try
+        {
+            var builder = new NpgsqlConnectionStringBuilder(connectionString);
+            if (!string.IsNullOrEmpty(builder.Password))
+                builder.Password = "***";
+            return builder.ToString();
+        }
+        catch
+        {
+            return "postgres";
+        }
     }
 }

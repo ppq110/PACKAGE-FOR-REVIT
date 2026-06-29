@@ -13,7 +13,7 @@ thong so ben trong** (Dynamo chay ngam, khong mo cua so).
 | Project | Vai tro | Ai dung |
 |---|---|---|
 | `DynLock.Core` | Thu vien ma hoa AES-256 + HMAC dung chung | (build chung) |
-| `DynLock.AuthServer` | Server HTTP noi bo, luu database local `auth.db` | May chu/LAN |
+| `DynLock.AuthServer` | Server HTTP noi bo cu, khong can cho login Gmail don gian | Tuy chon |
 | `DynLock.Encryptor` | `DynLockEncrypt.exe` - chuyen `.dyn` -> `.dynx` | Team lead |
 | `DynLock.Addin` | Addin Revit: nut **BIMLab -> Run Tool**, form nhap thong so, chay ngam | Nhan vien |
 
@@ -22,62 +22,78 @@ Target hien tai: **Revit 2024 / Dynamo 2.19 / .NET Framework 4.8** (khop file
 nen thuong chay duoc tren 2021-2024 ma khong can doi code; voi Revit 2025+ can
 doi TargetFramework sang `net8.0-windows` va package API sang `2025.*`/`2026.*`.
 
-## Auth server noi bo
+## Dang nhap Gmail qua DB trung tam trong LAN
 
-Quyen truy cap khong con phu thuoc Supabase. Chay `DynLock.AuthServer` tren mot
-may trong LAN; server nay luu database local tai:
+Leader va Member khong can nhap server URL. App da nhung san dia chi Auth Server
+noi bo, mac dinh:
+
+```text
+http://192.168.110.213:5050
+```
+
+Khi app hoi dang nhap, user chi can nhap Gmail dung dang:
+
+```text
+ten@gmail.com
+```
+
+Gmail do phai ton tai va dang active trong database trung tam ma Auth Server
+dang dung. Co 2 cach:
+
+- `sqlite`: file DB nam tren may chay Auth Server.
+- `postgres`: database Postgres trung tam, nen Leader them email tu may nao cung
+  dong bo ngay cho cac may khac, mien la tat ca app cung goi ve Auth Server
+  `http://192.168.110.213:5050`.
+
+Neu dung SQLite, file DB nam tren may server:
 
 ```text
 C:\ProgramData\BIMLab\DynLock\auth.db
 ```
 
-Tao file cau hinh tren may server va cac may client:
-
-```json
-{
-  "AuthServerUrl": "http://192.168.1.50:5050",
-  "SuperAdminEmail": "admin@company.com"
-}
-```
-
-Duong dan file:
-
-```text
-C:\ProgramData\BIMLab\DynLock\authserver.json
-```
-
-Hien tai co the de `AuthServerUrl` tro ve IP may nay. Sau nay neu dua database/API
-len server that, chi can doi `AuthServerUrl` thanh IP hoac domain moi, vi du
-`https://bimlab-auth.company.vn`.
-
-Chay server tren may host:
+Tren may server `192.168.110.213`, tao config va import/upsert du lieu Gmail tu
+Supabase cu:
 
 ```powershell
-.\run_auth_server.ps1
-```
-
-Neu muon doi cong:
-
-```powershell
-.\run_auth_server.ps1 -BindUrl "http://0.0.0.0:6060"
-```
-
-Import du lieu leader tu Supabase cu sang database local mot lan:
-
-```powershell
-.\import_supabase_to_local.ps1 `
-  -SuperAdminEmail "admin@company.com" `
+.\setup_local_auth_server.ps1 `
+  -SuperAdminEmail "admin@gmail.com" `
   -LegacySupabaseUrl "https://your-project.supabase.co" `
-  -LegacySupabaseAnonKey "<old-supabase-anon-key>" `
-  -AuthServerUrl "http://192.168.1.50:5050"
+  -LegacySupabaseAnonKey "<old-supabase-anon-key>"
 ```
 
-Sau khi import, chay server va kiem tra:
+Neu dung Postgres, tao database/user truoc, roi setup nhu sau:
 
 ```powershell
-Invoke-RestMethod "http://192.168.1.50:5050/api/health"
-Invoke-RestMethod "http://192.168.1.50:5050/api/auth/check?email=leader@gmail.com"
+.\setup_local_auth_server.ps1 `
+  -SuperAdminEmail "admin@gmail.com" `
+  -DatabaseProvider postgres `
+  -PostgresConnectionString "Host=192.168.110.213;Port=5432;Database=bimlab_auth;Username=bimlab;Password=your_password" `
+  -LegacySupabaseUrl "https://your-project.supabase.co" `
+  -LegacySupabaseAnonKey "<old-supabase-anon-key>"
 ```
+
+Chay Auth Server tren may `192.168.110.213`:
+
+```powershell
+.\run_auth_server.ps1 -BindUrl "http://0.0.0.0:5050"
+```
+
+Tu may khac trong LAN test:
+
+```powershell
+Invoke-RestMethod "http://192.168.110.213:5050/api/health"
+```
+
+Neu can dong goi ban gui cho team, chay:
+
+```powershell
+.\rebuild_and_dist.ps1
+```
+
+Script se build va tao san 2 goi trong `dist`:
+
+- `BIMLab_Studio_Leader_<ngay>.zip`
+- `BIMLab_Player_Member_<ngay>.zip`
 
 ## Team lead can lam gi (checklist)
 
@@ -113,8 +129,9 @@ Invoke-RestMethod "http://192.168.1.50:5050/api/auth/check?email=leader@gmail.co
 
 ## Nhan vien thay gi
 
-Chay **BIMLab Player.exe** -> nhap Auth server URL va Gmail da duoc cap quyen ->
-cai add-in cho Revit 2024/2025/2026. Mo Revit -> tab **BIMLab** ban dau co panel
+Chay **BIMLab Player.exe** -> nhap Gmail dang `ten@gmail.com` -> app tu kiem tra
+Gmail trong DB local tren `192.168.110.213` -> cai add-in cho Revit 2024/2025/2026.
+Mo Revit -> tab **BIMLab** ban dau co panel
 **Manager** voi nut **Login** va **Load**. Dang nhap Gmail trong Revit, bam
 **Load** de chon file `.dynx` leader gui, add-in se tao nut plugin tu metadata
 trong file `.dynx`. Khi bam plugin, member chi thay form nhap thong so/chon CAD,

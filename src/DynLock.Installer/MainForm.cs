@@ -31,7 +31,6 @@ namespace DynLock.Installer
         private readonly CheckBox _chk2024 = new CheckBox();
         private readonly CheckBox _chk2025 = new CheckBox();
         private readonly CheckBox _chk2026 = new CheckBox();
-        private readonly TextBox _authServerUrl = new TextBox();
         private readonly HashSet<string> _extracted = new HashSet<string>();
 
         public MainForm()
@@ -81,7 +80,7 @@ namespace DynLock.Installer
             var versionPanel = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 118,
+                Height = 72,
                 BackColor = ToolbarColor,
             };
 
@@ -98,23 +97,7 @@ namespace DynLock.Installer
             SetupCheckbox(_chk2025, "Revit 2025", 140, true);
             SetupCheckbox(_chk2026, "Revit 2026", 264, true);
 
-            var lblAuthServer = new Label
-            {
-                Text = "Auth server URL:",
-                Font = new Font("Segoe UI", 9f, FontStyle.Bold),
-                ForeColor = GrayText,
-                AutoSize = true,
-                Location = new Point(16, 76),
-            };
-            _authServerUrl.Text = string.IsNullOrWhiteSpace(AuthSession.AuthServerUrl)
-                ? LoadExistingAuthServerUrl()
-                : AuthSession.AuthServerUrl;
-            _authServerUrl.Font = new Font("Segoe UI", 9.5f);
-            _authServerUrl.BorderStyle = BorderStyle.FixedSingle;
-            _authServerUrl.Location = new Point(140, 72);
-            _authServerUrl.Width = 490;
-
-            versionPanel.Controls.AddRange(new Control[] { lblVersion, _chk2024, _chk2025, _chk2026, lblAuthServer, _authServerUrl });
+            versionPanel.Controls.AddRange(new Control[] { lblVersion, _chk2024, _chk2025, _chk2026 });
 
             _log.Dock = DockStyle.Fill;
             _log.Multiline = true;
@@ -198,14 +181,6 @@ namespace DynLock.Installer
                     return;
                 }
 
-                string authServerUrl = NormalizeAuthServerUrl(_authServerUrl.Text);
-                if (string.IsNullOrWhiteSpace(authServerUrl))
-                {
-                    MessageBox.Show(this, "Vui lòng nhập Auth server URL, ví dụ http://192.168.1.50:5050.",
-                        "BIMLab Player", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
                 Directory.CreateDirectory(Base);
                 Directory.CreateDirectory(ScriptsDir);
                 File.WriteAllText(Path.Combine(Base, "config.json"),
@@ -225,10 +200,7 @@ namespace DynLock.Installer
                 }
 
                 InstallDynamoPackages();
-                File.WriteAllText(
-                    Path.Combine(Base, "authserver.json"),
-                    "{\r\n  \"AuthServerUrl\": \"" + authServerUrl.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"\r\n}\r\n");
-                Log("[OK] Tạo authserver.json.");
+                Log("[OK] BIMLab Add-in sẽ dùng Auth Server mặc định 192.168.110.213:5050.");
                 TryCreateShortcut();
 
                 Log(">>> CÀI ĐẶT XONG <<<");
@@ -493,39 +465,6 @@ namespace DynLock.Installer
                 return;
 
             File.WriteAllText(path, content);
-        }
-
-        private static string NormalizeAuthServerUrl(string value)
-        {
-            value = (value ?? "").Trim().TrimEnd('/');
-            return value;
-        }
-
-        private static string LoadExistingAuthServerUrl()
-        {
-            try
-            {
-                string path = Path.Combine(Base, "authserver.json");
-                if (File.Exists(path))
-                {
-                    string json = File.ReadAllText(path);
-                    const string key = "\"AuthServerUrl\"";
-                    int k = json.IndexOf(key, StringComparison.OrdinalIgnoreCase);
-                    if (k >= 0)
-                    {
-                        int colon = json.IndexOf(':', k);
-                        int q1 = colon >= 0 ? json.IndexOf('"', colon + 1) : -1;
-                        int q2 = q1 >= 0 ? json.IndexOf('"', q1 + 1) : -1;
-                        if (q1 >= 0 && q2 > q1)
-                            return json.Substring(q1 + 1, q2 - q1 - 1);
-                    }
-                }
-            }
-            catch
-            {
-            }
-
-            return "http://localhost:5050";
         }
 
         private static Bitmap LoadAppIcon(int size)
